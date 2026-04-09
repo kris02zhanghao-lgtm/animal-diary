@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 动物卡片像素风格 */
+@layer components {
+  .animal-card {
+    border: 3px solid #5a4a3a;
+    box-shadow: 4px 4px 0px #5a4a3a;
+  }
+}
+
 :root {
   --text: #6b6375;
   --text-h: #08060d;
@@ -59,11 +67,10 @@ body {
 }
 
 #root {
-  width: 1126px;
+  width: 100%;
   max-width: 100%;
   margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
+  text-align: left;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
