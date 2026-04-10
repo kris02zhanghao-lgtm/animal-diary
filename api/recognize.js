@@ -86,6 +86,7 @@ export default async function handler(req, res) {
 
     const data = await response.json()
     const content = data.choices?.[0]?.message?.content?.trim()
+    console.log('[recognize] raw content:', content)
 
     if (!content) {
       return res.status(500).json({ success: false, error: '没有收到 AI 响应' })

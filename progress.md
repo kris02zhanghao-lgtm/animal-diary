@@ -1,7 +1,7 @@
 # 项目进度
 
 ## 当前状态
-MVP 核心功能 + 季度分组列表 + 卡片展开详情完成。下一步：Vercel 部署。
+v0.3 基本完成：Supabase 后端 + Vercel 部署 + AI 识别线上可用。下一步：Supabase 匿名登录 + RLS 数据隔离，或直接推进 v0.4 图鉴收集页。
 
 ## 已完成
 
@@ -101,12 +101,32 @@ MVP 核心功能 + 季度分组列表 + 卡片展开详情完成。下一步：V
 - 删除确认弹窗逻辑不变，删除后自动关闭展开态和菜单
 - 已 git commit（fc9bf4f）
 
+### Vercel 部署 + Supabase 后端迁移 ✓ 已验收
+- 存储从 localStorage 迁移到 Supabase PostgreSQL
+- AI 识别从前端直调改为后端代理（api/recognize.js），API Key 不再暴露前端
+- 配置 vercel.json + 环境变量，线上 AI 识别正常可用
+- 已 git commit（947ec5f、ce02d84）
+
+### 本轮排障进展
+- 已修复线上 OpenRouter API Key 未生效问题，重新部署后 AI 识别恢复正常
+- 已定位 Supabase 保存失败根因：当前报错不再是 API Key，而是 records 表开启了 RLS，但前端尚未接入匿名登录
+- vercel.json 已补充 API 路由配置，api/recognize.js 已加入原始响应日志，便于后续继续排障
+
 ## 下一步
-- 部署到 Vercel（配置 VITE_OPENROUTER_API_KEY 环境变量）
+- 方案 A：临时放开 records 写入策略，先恢复“保存到日志”可用
+- 方案 B：接入 Supabase 匿名登录 + 完整 RLS，作为正式上线方案
+
+## 未解决问题
+- 线上“保存到日志”仍失败，当前根因是 Supabase RLS 拒绝写入（非 API Key 问题）
+- 图片 base64 体积较大，记录多时可能接近 localStorage 5MB 上限（当前暂不处理）
+- 本地开发若要跑 api/recognize，需要使用 vercel dev，而不是仅 npm run dev
+- 需要决定先采用方案 A 还是方案 B 处理 Supabase 权限问题
 
 ## TODO（待处理）
 - 暂无
 
 ## 未解决问题
 - 图片 base64 体积较大，记录多时可能接近 localStorage 5MB 上限（当前暂不处理）
-- 需要配置 OpenRouter API Key 到 .env 文件（本地开发）
+- 本地开发若要跑 api/recognize，需要使用 vercel dev，而不是仅 npm run dev
+- 需要决定先采用方案 A 还是方案 B 处理 Supabase 权限问题
+- 线上“保存到日志”仍失败，当前根因是 Supabase RLS 拒绝写入（非 API Key 问题）
