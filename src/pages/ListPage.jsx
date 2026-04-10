@@ -3,14 +3,16 @@ import { getRecords, deleteRecord } from '../services/storageService'
 
 function ListPage({ onNavigate }) {
   const [records, setRecords] = useState([])
+  const [confirmingId, setConfirmingId] = useState(null)
 
   useEffect(() => {
     setRecords(getRecords())
   }, [])
 
-  const handleDelete = (id) => {
-    deleteRecord(id)
+  const handleDelete = () => {
+    deleteRecord(confirmingId)
     setRecords(getRecords())
+    setConfirmingId(null)
   }
 
   const formatDate = (iso) => {
@@ -66,7 +68,7 @@ function ListPage({ onNavigate }) {
                     <span className="ml-2 text-sm text-gray-500">{record.location}</span>
                   </div>
                   <button
-                    onClick={() => handleDelete(record.id)}
+                    onClick={() => setConfirmingId(record.id)}
                     className="text-gray-400 hover:text-red-500 transition-colors text-xl leading-none"
                     aria-label="删除"
                   >
@@ -80,6 +82,41 @@ function ListPage({ onNavigate }) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* 删除确认弹窗 */}
+      {confirmingId && (
+        <div
+          className="fixed inset-0 z-50 flex items-end"
+          style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
+          onClick={() => setConfirmingId(null)}
+        >
+          <div
+            className="w-full bg-[#fffdf7] rounded-t-2xl px-6 pt-6 pb-10"
+            style={{ border: '3px solid #5a4a3a', boxShadow: '0px -4px 0px #5a4a3a' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-3xl text-center mb-3">🐾</div>
+            <p className="text-center font-bold text-gray-800 text-base mb-1">确认删除这条偶遇记录？</p>
+            <p className="text-center text-gray-500 text-sm mb-6">它会永远离开你的图鉴...</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmingId(null)}
+                className="flex-1 py-3 rounded-xl font-bold text-[#5a4a3a]"
+                style={{ border: '3px solid #5a4a3a', boxShadow: '3px 3px 0px #5a4a3a', backgroundColor: '#fff8ee' }}
+              >
+                再想想
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex-1 py-3 rounded-xl font-bold text-white"
+                style={{ border: '3px solid #7a1a1a', boxShadow: '3px 3px 0px #7a1a1a', backgroundColor: '#c0392b' }}
+              >
+                挥手道别
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
