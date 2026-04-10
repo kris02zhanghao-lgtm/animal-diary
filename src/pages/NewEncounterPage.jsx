@@ -6,9 +6,9 @@ function NewEncounterPage({ onNavigate }) {
   const [selectedImage, setSelectedImage] = useState(null)
   const [location, setLocation] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [title, setTitle] = useState(null)
-  const [species, setSpecies] = useState(null)
-  const [journal, setJournal] = useState(null)
+  const [title, setTitle] = useState('')
+  const [species, setSpecies] = useState('')
+  const [journal, setJournal] = useState('')
   const [recognizedAt, setRecognizedAt] = useState(null)
   const [error, setError] = useState(null)
   const [saveError, setSaveError] = useState(null)
@@ -19,9 +19,6 @@ function NewEncounterPage({ onNavigate }) {
       const reader = new FileReader()
       reader.onloadend = () => {
         setSelectedImage(reader.result)
-        setTitle(null)
-        setSpecies(null)
-        setJournal(null)
         setRecognizedAt(null)
         setError(null)
       }
@@ -68,9 +65,15 @@ function NewEncounterPage({ onNavigate }) {
   }
 
   const formatDate = (date) => {
-    if (!date) return ''
-    return `${date.getFullYear()}年${String(date.getMonth() + 1).padStart(2, '0')}月${String(date.getDate()).padStart(2, '0')}日`
+    const d = date || new Date()
+    return `${d.getFullYear()}年${String(d.getMonth() + 1).padStart(2, '0')}月${String(d.getDate()).padStart(2, '0')}日`
   }
+
+  const generateButtonLabel = isLoading
+    ? '识别中...'
+    : recognizedAt !== null
+    ? '重新生成'
+    : '✨ AI 帮我生成档案'
 
   return (
     <div className="min-h-screen bg-[#fffdf7]">
@@ -86,7 +89,7 @@ function NewEncounterPage({ onNavigate }) {
         <h1 className="flex-1 text-center text-lg font-medium text-gray-800">
           记录偶遇
         </h1>
-        <div className="w-8" /> {/* 占位保持标题居中 */}
+        <div className="w-8" />
       </header>
 
       {/* 表单内容 */}
@@ -98,13 +101,13 @@ function NewEncounterPage({ onNavigate }) {
           </label>
           <div
             onClick={() => document.getElementById('imageInput').click()}
-            className="w-full h-48 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 transition-colors bg-white"
+            className="w-full h-48 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 transition-colors bg-[#f5f0e8]"
           >
             {selectedImage ? (
               <img
                 src={selectedImage}
                 alt="预览"
-                className="w-full h-full object-cover rounded-lg"
+                className="w-full h-full object-contain rounded-lg"
               />
             ) : (
               <>
@@ -122,102 +125,84 @@ function NewEncounterPage({ onNavigate }) {
           />
         </div>
 
-        {/* 地点输入 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            地点
-          </label>
-          <input
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="在哪里遇到的？"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7cb342] focus:border-transparent"
-          />
-        </div>
-
-        {/* 生成日志按钮 */}
+        {/* AI 生成按钮 */}
         <button
           onClick={handleGenerateLog}
           disabled={isLoading || !selectedImage}
           className="w-full py-3 bg-[#7cb342] text-white font-medium rounded-lg hover:bg-[#6a9e38] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
         >
-          {isLoading ? '识别中...' : '生成日志'}
+          {generateButtonLabel}
         </button>
 
         {/* 偶遇档案卡片 */}
-        {species && (
-          <div
-            className="rounded-2xl overflow-hidden"
-            style={{ border: '3px solid #5a4a3a', boxShadow: '4px 4px 0px #5a4a3a' }}
-          >
-            {/* 标题区 */}
-            <div className="px-5 pt-5 pb-4" style={{ background: 'linear-gradient(135deg, #f5e6c8 0%, #ede0c4 100%)' }}>
+        <div
+          className="rounded-2xl overflow-hidden"
+          style={{ border: '3px solid #5a4a3a', boxShadow: '4px 4px 0px #5a4a3a' }}
+        >
+          {/* 标题区 */}
+          <div className="px-5 pt-5 pb-4" style={{ background: 'linear-gradient(135deg, #f5e6c8 0%, #ede0c4 100%)' }}>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="给这次偶遇起个名字..."
+              className="w-full text-xl font-bold text-[#3d2b1a] bg-transparent border-none outline-none placeholder-[#a08060]"
+            />
+            <p className="text-xs text-[#a08060] mt-1">{formatDate(recognizedAt)}</p>
+          </div>
+
+          {/* 日志内容区 */}
+          <div className="px-5 py-4 bg-[#fffdf7]">
+            <textarea
+              value={journal}
+              onChange={(e) => setJournal(e.target.value)}
+              rows={5}
+              placeholder="记录这次偶遇的故事，或点击上方按钮让 AI 帮你生成..."
+              className="w-full text-[#3d2b1a] text-sm leading-relaxed bg-transparent border-none outline-none resize-none placeholder-[#c4b49a]"
+            />
+          </div>
+
+          {/* 标签行 */}
+          <div className="px-5 py-3 flex gap-3 flex-wrap" style={{ background: '#f5ede0', borderTop: '1px solid #e0d0b8' }}>
+            <div className="flex items-center gap-1">
+              <span className="text-base">🐾</span>
               <input
                 type="text"
-                value={title || ''}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="偶遇标题"
-                className="w-full text-xl font-bold text-[#3d2b1a] bg-transparent border-none outline-none placeholder-[#a08060]"
-              />
-              <p className="text-xs text-[#a08060] mt-1">{formatDate(recognizedAt)}</p>
-            </div>
-
-            {/* 日志内容区 */}
-            <div className="px-5 py-4 bg-[#fffdf7]">
-              <textarea
-                value={journal || ''}
-                onChange={(e) => setJournal(e.target.value)}
-                rows={5}
-                placeholder="偶遇日志..."
-                className="w-full text-[#3d2b1a] text-sm leading-relaxed bg-transparent border-none outline-none resize-none placeholder-[#c4b49a]"
+                value={species}
+                onChange={(e) => setSpecies(e.target.value)}
+                className="text-sm font-medium text-[#3d2b1a] bg-transparent border-none outline-none w-24"
+                placeholder="动物种类"
               />
             </div>
-
-            {/* 标签行 */}
-            <div className="px-5 py-3 flex gap-3 flex-wrap" style={{ background: '#f5ede0', borderTop: '1px solid #e0d0b8' }}>
-              <div className="flex items-center gap-1">
-                <span className="text-base">🐾</span>
-                <input
-                  type="text"
-                  value={species}
-                  onChange={(e) => setSpecies(e.target.value)}
-                  className="text-sm font-medium text-[#3d2b1a] bg-transparent border-none outline-none w-24"
-                  placeholder="动物种类"
-                />
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="text-base">📍</span>
-                <input
-                  type="text"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="text-sm text-[#5a4a3a] bg-transparent border-none outline-none w-28"
-                  placeholder="地点"
-                />
-              </div>
+            <div className="flex items-center gap-1">
+              <span className="text-base">📍</span>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="text-sm text-[#5a4a3a] bg-transparent border-none outline-none w-28"
+                placeholder="地点"
+              />
             </div>
           </div>
-        )}
+        </div>
 
         {/* 操作按钮 */}
-        {species && (
-          <div className="flex gap-3">
-            <button
-              onClick={handleSave}
-              disabled={!species.trim()}
-              className="flex-1 py-3 bg-[#7cb342] text-white font-medium rounded-lg hover:bg-[#6a9e38] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-            >
-              保存到日志
-            </button>
-            <button
-              onClick={() => alert('即将上线，敬请期待！')}
-              className="flex-1 py-3 bg-white text-[#7cb342] font-medium rounded-lg border-2 border-[#7cb342] hover:bg-green-50 transition-colors"
-            >
-              分享发现
-            </button>
-          </div>
-        )}
+        <div className="flex gap-3">
+          <button
+            onClick={handleSave}
+            disabled={!species.trim()}
+            className="flex-1 py-3 bg-[#7cb342] text-white font-medium rounded-lg hover:bg-[#6a9e38] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          >
+            保存到日志
+          </button>
+          <button
+            onClick={() => alert('即将上线，敬请期待！')}
+            className="flex-1 py-3 bg-white text-[#7cb342] font-medium rounded-lg border-2 border-[#7cb342] hover:bg-green-50 transition-colors"
+          >
+            分享发现
+          </button>
+        </div>
 
         {/* 错误提示 */}
         {error && (
