@@ -1,13 +1,42 @@
-import { useState, useEffect } from 'react'
+import { useState, useMemo } from 'react'
+import { Swiper, SwiperSlide } from 'swiper/react'
+import { EffectCoverflow } from 'swiper/modules'
+import 'swiper/css'
+import 'swiper/css/effect-coverflow'
 import { getRecords, deleteRecord } from '../services/storageService'
 
 function ListPage({ onNavigate }) {
-  const [records, setRecords] = useState([])
+  const [records, setRecords] = useState(() => getRecords())
   const [confirmingId, setConfirmingId] = useState(null)
 
-  useEffect(() => {
-    setRecords(getRecords())
-  }, [])
+  const getSeasonLabel = (dateString) => {
+    const d = new Date(dateString)
+    const year = d.getFullYear()
+    const month = d.getMonth() + 1
+
+    let season
+    if (month >= 3 && month <= 5) season = '春'
+    else if (month >= 6 && month <= 8) season = '夏'
+    else if (month >= 9 && month <= 11) season = '秋'
+    else season = '冬'
+
+    return `${year}年${season}`
+  }
+
+  const groupedRecords = useMemo(() => {
+    const groups = {}
+    records.forEach((record) => {
+      const label = getSeasonLabel(record.createdAt)
+      if (!groups[label]) {
+        groups[label] = { label, items: [] }
+      }
+      groups[label].items.push(record)
+    })
+
+    return Object.entries(groups)
+      .map(([seasonKey, group]) => ({ seasonKey, ...group }))
+      .sort((a, b) => b.seasonKey.localeCompare(a.seasonKey))
+  }, [records])
 
   const handleDelete = () => {
     deleteRecord(confirmingId)
@@ -22,7 +51,6 @@ function ListPage({ onNavigate }) {
 
   return (
     <div className="min-h-screen bg-[#fffdf7] px-4 py-6">
-      {/* Google Fonts - Press Start 2P */}
       <link
         href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
         rel="stylesheet"
@@ -30,11 +58,21 @@ function ListPage({ onNavigate }) {
 
       {/* 页面标题 */}
       <h1
-        className="text-center text-xl mt-4 mb-8"
+        className="text-center text-xl mt-4 mb-6"
         style={{ fontFamily: "'Press Start 2P', cursive" }}
       >
         我的动物图鉴
       </h1>
+
+      {/* Tab 占位 UI */}
+      <div className="flex gap-6 justify-center mb-8">
+        <button className="pb-2 font-bold text-[#3d2b1a]" style={{ borderBottom: '3px solid #7cb342' }}>
+          时间线
+        </button>
+        <button className="pb-2 text-gray-500" onClick={() => {}}>
+          图鉴
+        </button>
+      </div>
 
       {records.length === 0 ? (
         /* 空状态 */
@@ -46,40 +84,78 @@ function ListPage({ onNavigate }) {
           </p>
         </div>
       ) : (
-        /* 记录列表 */
-        <div className="space-y-4 pb-24">
-          {records.map((record) => (
-            <div
-              key={record.id}
-              className="bg-white rounded-lg overflow-hidden"
-              style={{ border: '3px solid #5a4a3a', boxShadow: '4px 4px 0px #5a4a3a' }}
-            >
-              {/* 图片 */}
-              <img
-                src={record.imageBase64}
-                alt={record.species}
-                className="w-full h-48 object-cover"
-              />
-              {/* 内容 */}
-              <div className="p-4 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-lg font-bold text-gray-800">{record.species}</span>
-                    <span className="ml-2 text-sm text-gray-500">{record.location}</span>
-                  </div>
-                  <button
-                    onClick={() => setConfirmingId(record.id)}
-                    className="text-gray-400 hover:text-red-500 transition-colors text-xl leading-none"
-                    aria-label="删除"
+        /* 分组列表 */
+        <div className="space-y-12 pb-24">
+          {groupedRecords.map((group) => (
+            <div key={group.seasonKey}>
+              {/* 分组标题 */}
+              <h2 className="text-lg font-bold text-[#3d2b1a] mb-4">{group.label}</h2>
+
+              {/* Swiper 轮播 */}
+              <Swiper
+                modules={[EffectCoverflow]}
+                effect="coverflow"
+                grabCursor={true}
+                centeredSlides={true}
+                slidesPerView="auto"
+                spaceBetween={20}
+                coverflowEffect={{
+                  rotate: 0,
+                  stretch: 0,
+                  depth: 200,
+                  modifier: 1,
+                  scale: 0.8,
+                  slideShadows: false,
+                }}
+                className="w-full"
+              >
+                {group.items.map((record) => (
+                  <SwiperSlide
+                    key={record.id}
+                    style={{ width: '260px' }}
+                    className="flex justify-center"
                   >
-                    ×
-                  </button>
-                </div>
-                <p className="text-sm text-gray-600 leading-relaxed italic">
-                  "{record.journal}"
-                </p>
-                <p className="text-xs text-gray-400">{formatDate(record.createdAt)}</p>
-              </div>
+                    <div
+                      className="w-64 rounded-2xl overflow-hidden bg-white"
+                      style={{ border: '3px solid #5a4a3a', boxShadow: '4px 4px 0px #5a4a3a' }}
+                    >
+                      {/* 图片 */}
+                      <img
+                        src={record.imageBase64}
+                        alt={record.species}
+                        className="w-full h-64 object-cover"
+                      />
+
+                      {/* 信息区 */}
+                      <div className="p-3 space-y-2">
+                        {/* 物种 */}
+                        <div className="flex items-center gap-1">
+                          <span className="text-sm">🐾</span>
+                          <span className="text-sm font-bold text-[#3d2b1a]">{record.species}</span>
+                        </div>
+
+                        {/* 地点 */}
+                        <div className="flex items-center gap-1">
+                          <span className="text-sm">📍</span>
+                          <span className="text-xs text-gray-600">{record.location}</span>
+                        </div>
+
+                        {/* 日期 */}
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-gray-400">{formatDate(record.createdAt)}</span>
+                          <button
+                            onClick={() => setConfirmingId(record.id)}
+                            className="text-gray-400 hover:text-red-500 transition-colors text-lg leading-none"
+                            aria-label="删除"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </SwiperSlide>
+                ))}
+              </Swiper>
             </div>
           ))}
         </div>
