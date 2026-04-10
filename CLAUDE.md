@@ -15,3 +15,5 @@
 - 默认模型：google/gemini-2.5-flash-lite
 - .env文件不能上传GitHub
 - 每次commit后更新progress.md
+- 项目PRD见PRD.md，其中标注了MVP范围和版本规划
+- 每次更新progress.md前，先读PRD.md确认还有哪些功能未完成

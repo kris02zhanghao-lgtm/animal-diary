@@ -30,6 +30,7 @@ function NewEncounterPage({ onNavigate }) {
 
     setIsLoading(true)
     setError(null)
+    setSaveError(null)
 
     const result = await recognizeAnimal(selectedImage, location)
 
@@ -38,21 +39,24 @@ function NewEncounterPage({ onNavigate }) {
     if (result.success) {
       setSpecies(result.species)
       setJournal(result.journal)
-      try {
-        saveRecord({
-          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-          imageBase64: selectedImage,
-          location: location || '城市某处',
-          species: result.species,
-          journal: result.journal,
-          createdAt: new Date().toISOString(),
-        })
-        onNavigate('list')
-      } catch {
-        setSaveError('保存失败，请重试')
-      }
     } else {
       setError(result.error)
+    }
+  }
+
+  const handleSave = () => {
+    try {
+      saveRecord({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        imageBase64: selectedImage,
+        location: location || '城市某处',
+        species,
+        journal,
+        createdAt: new Date().toISOString(),
+      })
+      onNavigate('list')
+    } catch {
+      setSaveError('保存失败，请重试')
     }
   }
 
@@ -129,21 +133,36 @@ function NewEncounterPage({ onNavigate }) {
           {isLoading ? '识别中...' : '生成日志'}
         </button>
 
-        {/* 识别结果 */}
+        {/* 识别结果（可编辑） */}
         {species && (
           <div className="p-4 bg-green-50 border border-green-200 rounded-lg space-y-3">
             <div>
-              <p className="text-sm text-gray-600">识别结果：</p>
-              <p className="text-xl font-bold text-green-700 mt-1">{species}</p>
+              <label className="text-sm text-gray-600">识别结果：</label>
+              <input
+                type="text"
+                value={species}
+                onChange={(e) => setSpecies(e.target.value)}
+                className="w-full mt-1 px-3 py-2 text-lg font-bold text-green-700 bg-white border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7cb342]"
+              />
             </div>
-            {journal && (
+            {journal !== null && (
               <div className="pt-3 border-t border-green-200">
-                <p className="text-sm text-gray-500 mb-2">偶遇日志：</p>
-                <blockquote className="text-gray-700 text-sm leading-relaxed bg-white/60 p-3 rounded-lg italic">
-                  "{journal}"
-                </blockquote>
+                <label className="text-sm text-gray-500 mb-2 block">偶遇日志：</label>
+                <textarea
+                  value={journal}
+                  onChange={(e) => setJournal(e.target.value)}
+                  rows={5}
+                  className="w-full px-3 py-2 text-gray-700 text-sm leading-relaxed bg-white border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7cb342] resize-none"
+                />
               </div>
             )}
+            <button
+              onClick={handleSave}
+              disabled={!species.trim()}
+              className="w-full py-3 bg-[#7cb342] text-white font-medium rounded-lg hover:bg-[#6a9e38] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            >
+              保存这次偶遇
+            </button>
           </div>
         )}
 
