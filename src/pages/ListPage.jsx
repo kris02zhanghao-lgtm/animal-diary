@@ -36,10 +36,11 @@ function ListPage({ onNavigate }) {
 
       {records.length === 0 ? (
         /* 空状态 */
-        <div className="flex flex-col items-center justify-center mt-20">
-          <div className="text-6xl mb-4">🐿️</div>
-          <p className="text-gray-600 text-center text-sm leading-relaxed">
-            还没有偶遇记录，出门遇见小动物拍一张吧～
+        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="text-6xl mb-6">🐿️</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">还没有偶遇记录</h2>
+          <p className="text-gray-500 text-base text-center leading-relaxed">
+            出门遇见小动物拍一张吧～<br />让你的城市日志热闹起来！
           </p>
         </div>
       ) : (
