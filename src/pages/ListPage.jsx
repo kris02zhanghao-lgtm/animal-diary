@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { EffectCoverflow } from 'swiper/modules'
 import 'swiper/css'
@@ -8,6 +8,9 @@ import { getRecords, deleteRecord } from '../services/storageService'
 function ListPage({ onNavigate }) {
   const [records, setRecords] = useState(() => getRecords())
   const [confirmingId, setConfirmingId] = useState(null)
+  const [expandedId, setExpandedId] = useState(null)
+  const [expandingMenuId, setExpandingMenuId] = useState(null)
+  const menuRef = useRef(null)
 
   const getSeasonLabel = (dateString) => {
     const d = new Date(dateString)
@@ -42,12 +45,28 @@ function ListPage({ onNavigate }) {
     deleteRecord(confirmingId)
     setRecords(getRecords())
     setConfirmingId(null)
+    setExpandedId(null)
+    setExpandingMenuId(null)
   }
 
   const formatDate = (iso) => {
     const d = new Date(iso)
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   }
+
+  // 点击菜单外关闭菜单
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setExpandingMenuId(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // 展开态的卡片对象
+  const expandedRecord = expandedId ? records.find(r => r.id === expandedId) : null
 
   return (
     <div className="min-h-screen bg-[#fffdf7] px-4 py-6">
@@ -74,7 +93,91 @@ function ListPage({ onNavigate }) {
         </button>
       </div>
 
-      {records.length === 0 ? (
+      {/* 展开态详情视图 - 全屏显示，列表隐藏 */}
+      {expandedId !== null ? (
+        <div className="mb-24 max-w-2xl mx-auto">
+          {/* 详情视图顶部：返回按钮 + 菜单 */}
+          <div className="flex justify-between items-center mb-4">
+            <button
+              onClick={() => setExpandedId(null)}
+              className="text-2xl text-gray-700 hover:text-gray-900"
+              aria-label="返回"
+            >
+              ←
+            </button>
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setExpandingMenuId(expandingMenuId === expandedId ? null : expandedId)}
+                className="text-xl text-gray-600 hover:text-gray-800 font-bold"
+                aria-label="菜单"
+              >
+                ⋮
+              </button>
+              {expandingMenuId === expandedId && (
+                <div
+                  className="absolute right-0 top-8 bg-white rounded-lg shadow-lg z-20"
+                  style={{ border: '2px solid #5a4a3a', minWidth: '120px' }}
+                >
+                  <button
+                    onClick={() => {
+                      alert('即将上线，敬请期待！')
+                      setExpandingMenuId(null)
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 first:rounded-t-md"
+                  >
+                    分享
+                  </button>
+                  <button
+                    onClick={() => {
+                      setConfirmingId(expandedRecord.id)
+                      setExpandingMenuId(null)
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 last:rounded-b-md"
+                  >
+                    删除
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 详情卡片 */}
+          <div
+            className="rounded-2xl overflow-hidden bg-white"
+            style={{ border: '3px solid #5a4a3a', boxShadow: '4px 4px 0px #5a4a3a' }}
+          >
+            {/* 大图 */}
+            <img
+              src={expandedRecord.imageBase64}
+              alt={expandedRecord.species}
+              className="w-full max-h-96 object-contain bg-gray-100"
+            />
+
+            {/* 完整日志 */}
+            <div className="p-5 space-y-4">
+              <div>
+                <p className="text-sm text-gray-500 mb-2">偶遇日志</p>
+                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {expandedRecord.journal}
+                </p>
+              </div>
+
+              {/* 物种、地点、日期 */}
+              <div className="pt-3 border-t border-gray-200 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span>🐾</span>
+                  <span className="font-bold text-gray-800">{expandedRecord.species}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span>📍</span>
+                  <span className="text-gray-600">{expandedRecord.location}</span>
+                </div>
+                <div className="text-xs text-gray-400">{formatDate(expandedRecord.createdAt)}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : records.length === 0 ? (
         /* 空状态 */
         <div className="flex flex-col items-center justify-center min-h-[70vh]">
           <div className="text-6xl mb-6">🐿️</div>
@@ -116,9 +219,56 @@ function ListPage({ onNavigate }) {
                     className="flex justify-center"
                   >
                     <div
-                      className="w-64 rounded-2xl overflow-hidden bg-white"
+                      className="w-64 rounded-2xl overflow-hidden bg-white relative"
                       style={{ border: '3px solid #5a4a3a', boxShadow: '4px 4px 0px #5a4a3a' }}
                     >
+                      {/* 菜单按钮 */}
+                      <div className="absolute top-3 right-3 z-10" ref={expandingMenuId === record.id ? menuRef : null}>
+                        <button
+                          onClick={() => setExpandingMenuId(expandingMenuId === record.id ? null : record.id)}
+                          className="rounded-full w-8 h-8 flex items-center justify-center text-gray-600 hover:text-gray-800 font-bold"
+                          style={{ backgroundColor: 'rgba(255, 255, 255, 0.6)' }}
+                          aria-label="菜单"
+                        >
+                          ⋮
+                        </button>
+
+                        {expandingMenuId === record.id && (
+                          <div
+                            className="absolute right-0 top-10 bg-white rounded-lg shadow-lg z-20"
+                            style={{ border: '2px solid #5a4a3a', minWidth: '100px' }}
+                          >
+                            <button
+                              onClick={() => {
+                                setExpandedId(record.id)
+                                setExpandingMenuId(null)
+                              }}
+                              className="block w-full text-left px-3 py-2 text-xs hover:bg-gray-100 first:rounded-t-md"
+                            >
+                              展开
+                            </button>
+                            <button
+                              onClick={() => {
+                                alert('即将上线，敬请期待！')
+                                setExpandingMenuId(null)
+                              }}
+                              className="block w-full text-left px-3 py-2 text-xs hover:bg-gray-100"
+                            >
+                              分享
+                            </button>
+                            <button
+                              onClick={() => {
+                                setConfirmingId(record.id)
+                                setExpandingMenuId(null)
+                              }}
+                              className="block w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 last:rounded-b-md"
+                            >
+                              删除
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
                       {/* 图片 */}
                       <img
                         src={record.imageBase64}
@@ -141,16 +291,7 @@ function ListPage({ onNavigate }) {
                         </div>
 
                         {/* 日期 */}
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-400">{formatDate(record.createdAt)}</span>
-                          <button
-                            onClick={() => setConfirmingId(record.id)}
-                            className="text-gray-400 hover:text-red-500 transition-colors text-lg leading-none"
-                            aria-label="删除"
-                          >
-                            ×
-                          </button>
-                        </div>
+                        <div className="text-xs text-gray-400">{formatDate(record.createdAt)}</div>
                       </div>
                     </div>
                   </SwiperSlide>
