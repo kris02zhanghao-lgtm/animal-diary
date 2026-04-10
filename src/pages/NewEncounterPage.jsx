@@ -56,6 +56,8 @@ function NewEncounterPage({ onNavigate }) {
   }
 
   const handleSave = async () => {
+    setSaveError(null)
+
     try {
       await saveRecord({
         image_base64: selectedImage,

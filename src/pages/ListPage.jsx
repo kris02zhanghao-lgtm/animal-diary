@@ -10,10 +10,18 @@ function ListPage({ onNavigate }) {
   const [confirmingId, setConfirmingId] = useState(null)
   const [expandedId, setExpandedId] = useState(null)
   const [expandingMenuId, setExpandingMenuId] = useState(null)
+  const [loadError, setLoadError] = useState(null)
   const menuRef = useRef(null)
 
   useEffect(() => {
-    getRecords().then((data) => setRecords(data.map(normalizeRecord)))
+    getRecords()
+      .then((data) => {
+        setRecords(data.map(normalizeRecord))
+        setLoadError(null)
+      })
+      .catch(() => {
+        setLoadError('加载记录失败，请刷新重试')
+      })
   }, [])
 
   const normalizeRecord = (r) => ({
@@ -55,6 +63,7 @@ function ListPage({ onNavigate }) {
     await deleteRecord(confirmingId)
     const updated = await getRecords()
     setRecords(updated.map(normalizeRecord))
+    setLoadError(null)
     setConfirmingId(null)
     setExpandedId(null)
     setExpandingMenuId(null)
@@ -103,6 +112,12 @@ function ListPage({ onNavigate }) {
           图鉴
         </button>
       </div>
+
+      {loadError && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm text-red-600">{loadError}</p>
+        </div>
+      )}
 
       {/* 展开态详情视图 - 全屏显示，列表隐藏 */}
       {expandedId !== null ? (
