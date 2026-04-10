@@ -3,14 +3,24 @@ import { Swiper, SwiperSlide } from 'swiper/react'
 import { EffectCoverflow } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/effect-coverflow'
-import { getRecords, deleteRecord } from '../services/storageService'
+import { getRecords, deleteRecord } from '../services/supabaseService'
 
 function ListPage({ onNavigate }) {
-  const [records, setRecords] = useState(() => getRecords())
+  const [records, setRecords] = useState([])
   const [confirmingId, setConfirmingId] = useState(null)
   const [expandedId, setExpandedId] = useState(null)
   const [expandingMenuId, setExpandingMenuId] = useState(null)
   const menuRef = useRef(null)
+
+  useEffect(() => {
+    getRecords().then((data) => setRecords(data.map(normalizeRecord)))
+  }, [])
+
+  const normalizeRecord = (r) => ({
+    ...r,
+    imageBase64: r.image_base64 ?? r.imageBase64,
+    createdAt: r.created_at ?? r.createdAt,
+  })
 
   const getSeasonLabel = (dateString) => {
     const d = new Date(dateString)
@@ -41,9 +51,10 @@ function ListPage({ onNavigate }) {
       .sort((a, b) => b.seasonKey.localeCompare(a.seasonKey))
   }, [records])
 
-  const handleDelete = () => {
-    deleteRecord(confirmingId)
-    setRecords(getRecords())
+  const handleDelete = async () => {
+    await deleteRecord(confirmingId)
+    const updated = await getRecords()
+    setRecords(updated.map(normalizeRecord))
     setConfirmingId(null)
     setExpandedId(null)
     setExpandingMenuId(null)

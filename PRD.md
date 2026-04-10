@@ -152,11 +152,11 @@
 |------|---------|------|
 | v0.1 | 基础框架 + UI | ✅ 完成 |
 | v0.2 | AI识别 + 日志生成 + localStorage | ✅ 完成 |
-| v0.3 | 日志编辑 + 卡片展开 + 季度分组列表 + Vercel部署 | 🔄 进行中 |
+| v0.3 | 日志编辑 + 卡片展开 + 季度分组列表 + Supabase后端 + Vercel部署 | 🔄 进行中 |
 | v0.4 | 图鉴收集页（含首页时间线/图鉴 tab 切换） | 待开始 |
 | v0.5 | 偶遇地图 + 自动定位 | 待开始 |
 | v0.6 | 成就系统 | 待开始 |
-| v1.0 | 后端化（用户系统+云端存储）+ 分享卡片 | 待开始 |
+| v1.0 | 分享卡片 + 社交功能 | 待开始 |
 
 ---
 
@@ -166,12 +166,13 @@
 |------|------|------|
 | 框架 | React（Vite） | |
 | 样式 | Tailwind CSS | |
-| AI调用 | OpenRouter API | 默认模型：google/gemini-2.5-flash-lite |
+| 数据存储 | Supabase PostgreSQL + Auth | 用户认证（匿名自动登录）+ 行级安全（RLS） |
+| 后端 | Vercel Functions | 代理 OpenRouter API，隐藏 API Key |
+| AI调用 | OpenRouter API（后端代理） | 默认模型：google/gemini-2.5-flash-lite |
 | 图片处理 | FileReader → base64压缩 | |
-| 数据存储 | localStorage | MVP阶段无需后端 |
-| 部署 | Vercel | 免费，个人使用 |
+| 部署 | Vercel | 免费，支持跨设备数据同步 |
 
-> ⚠️ 安全提醒：MVP阶段API Key放前端只用于个人使用，不要把网址分享给很多人，否则会消耗你的API额度。后续做分享功能之前，必须把API调用迁移到后端。
+> ✅ 安全性：OpenRouter API Key 存储在 Vercel 后端环境变量，不暴露到前端。Supabase RLS 确保用户数据隔离。可安心分享给他人使用。
 
 ---
 

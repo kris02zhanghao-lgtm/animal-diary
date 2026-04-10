@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { recognizeAnimal } from '../services/aiService'
-import { saveRecord } from '../services/storageService'
+import { saveRecord } from '../services/supabaseService'
 
 function NewEncounterPage({ onNavigate }) {
   const [selectedImage, setSelectedImage] = useState(null)
@@ -33,30 +32,37 @@ function NewEncounterPage({ onNavigate }) {
     setError(null)
     setSaveError(null)
 
-    const result = await recognizeAnimal(selectedImage, location)
+    try {
+      const response = await fetch('/api/recognize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: selectedImage, location }),
+      })
+      const result = await response.json()
 
-    setIsLoading(false)
-
-    if (result.success) {
-      setTitle(result.title)
-      setSpecies(result.species)
-      setJournal(result.journal)
-      setRecognizedAt(new Date())
-    } else {
-      setError(result.error)
+      if (result.success) {
+        setTitle(result.title)
+        setSpecies(result.species)
+        setJournal(result.journal)
+        setRecognizedAt(new Date())
+      } else {
+        setError(result.error || '识别失败，请重试')
+      }
+    } catch {
+      setError('网络错误，请检查连接后重试')
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
     try {
-      saveRecord({
-        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        imageBase64: selectedImage,
+      await saveRecord({
+        image_base64: selectedImage,
         location: location || '城市某处',
         title,
         species,
         journal,
-        createdAt: new Date().toISOString(),
       })
       onNavigate('list')
     } catch {
