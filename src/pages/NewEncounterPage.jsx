@@ -6,8 +6,10 @@ function NewEncounterPage({ onNavigate }) {
   const [selectedImage, setSelectedImage] = useState(null)
   const [location, setLocation] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [title, setTitle] = useState(null)
   const [species, setSpecies] = useState(null)
   const [journal, setJournal] = useState(null)
+  const [recognizedAt, setRecognizedAt] = useState(null)
   const [error, setError] = useState(null)
   const [saveError, setSaveError] = useState(null)
 
@@ -17,8 +19,10 @@ function NewEncounterPage({ onNavigate }) {
       const reader = new FileReader()
       reader.onloadend = () => {
         setSelectedImage(reader.result)
+        setTitle(null)
         setSpecies(null)
         setJournal(null)
+        setRecognizedAt(null)
         setError(null)
       }
       reader.readAsDataURL(file)
@@ -37,8 +41,10 @@ function NewEncounterPage({ onNavigate }) {
     setIsLoading(false)
 
     if (result.success) {
+      setTitle(result.title)
       setSpecies(result.species)
       setJournal(result.journal)
+      setRecognizedAt(new Date())
     } else {
       setError(result.error)
     }
@@ -50,6 +56,7 @@ function NewEncounterPage({ onNavigate }) {
         id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         imageBase64: selectedImage,
         location: location || '城市某处',
+        title,
         species,
         journal,
         createdAt: new Date().toISOString(),
@@ -58,6 +65,11 @@ function NewEncounterPage({ onNavigate }) {
     } catch {
       setSaveError('保存失败，请重试')
     }
+  }
+
+  const formatDate = (date) => {
+    if (!date) return ''
+    return `${date.getFullYear()}年${String(date.getMonth() + 1).padStart(2, '0')}月${String(date.getDate()).padStart(2, '0')}日`
   }
 
   return (
@@ -133,35 +145,76 @@ function NewEncounterPage({ onNavigate }) {
           {isLoading ? '识别中...' : '生成日志'}
         </button>
 
-        {/* 识别结果（可编辑） */}
+        {/* 偶遇档案卡片 */}
         {species && (
-          <div className="p-4 bg-green-50 border border-green-200 rounded-lg space-y-3">
-            <div>
-              <label className="text-sm text-gray-600">识别结果：</label>
+          <div
+            className="rounded-2xl overflow-hidden"
+            style={{ border: '3px solid #5a4a3a', boxShadow: '4px 4px 0px #5a4a3a' }}
+          >
+            {/* 标题区 */}
+            <div className="px-5 pt-5 pb-4" style={{ background: 'linear-gradient(135deg, #f5e6c8 0%, #ede0c4 100%)' }}>
               <input
                 type="text"
-                value={species}
-                onChange={(e) => setSpecies(e.target.value)}
-                className="w-full mt-1 px-3 py-2 text-lg font-bold text-green-700 bg-white border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7cb342]"
+                value={title || ''}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="偶遇标题"
+                className="w-full text-xl font-bold text-[#3d2b1a] bg-transparent border-none outline-none placeholder-[#a08060]"
+              />
+              <p className="text-xs text-[#a08060] mt-1">{formatDate(recognizedAt)}</p>
+            </div>
+
+            {/* 日志内容区 */}
+            <div className="px-5 py-4 bg-[#fffdf7]">
+              <textarea
+                value={journal || ''}
+                onChange={(e) => setJournal(e.target.value)}
+                rows={5}
+                placeholder="偶遇日志..."
+                className="w-full text-[#3d2b1a] text-sm leading-relaxed bg-transparent border-none outline-none resize-none placeholder-[#c4b49a]"
               />
             </div>
-            {journal !== null && (
-              <div className="pt-3 border-t border-green-200">
-                <label className="text-sm text-gray-500 mb-2 block">偶遇日志：</label>
-                <textarea
-                  value={journal}
-                  onChange={(e) => setJournal(e.target.value)}
-                  rows={5}
-                  className="w-full px-3 py-2 text-gray-700 text-sm leading-relaxed bg-white border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7cb342] resize-none"
+
+            {/* 标签行 */}
+            <div className="px-5 py-3 flex gap-3 flex-wrap" style={{ background: '#f5ede0', borderTop: '1px solid #e0d0b8' }}>
+              <div className="flex items-center gap-1">
+                <span className="text-base">🐾</span>
+                <input
+                  type="text"
+                  value={species}
+                  onChange={(e) => setSpecies(e.target.value)}
+                  className="text-sm font-medium text-[#3d2b1a] bg-transparent border-none outline-none w-24"
+                  placeholder="动物种类"
                 />
               </div>
-            )}
+              <div className="flex items-center gap-1">
+                <span className="text-base">📍</span>
+                <input
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="text-sm text-[#5a4a3a] bg-transparent border-none outline-none w-28"
+                  placeholder="地点"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 操作按钮 */}
+        {species && (
+          <div className="flex gap-3">
             <button
               onClick={handleSave}
               disabled={!species.trim()}
-              className="w-full py-3 bg-[#7cb342] text-white font-medium rounded-lg hover:bg-[#6a9e38] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 py-3 bg-[#7cb342] text-white font-medium rounded-lg hover:bg-[#6a9e38] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
             >
-              保存这次偶遇
+              保存到日志
+            </button>
+            <button
+              onClick={() => alert('即将上线，敬请期待！')}
+              className="flex-1 py-3 bg-white text-[#7cb342] font-medium rounded-lg border-2 border-[#7cb342] hover:bg-green-50 transition-colors"
+            >
+              分享发现
             </button>
           </div>
         )}

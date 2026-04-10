@@ -41,7 +41,8 @@ export async function recognizeAnimal(imageBase64, location = '') {
 
 任务：
 1. 识别图片中的动物物种（中文名，生活化称呼，如"奶牛猫"、"橘猫"、"三花猫"、"柯基"、"喜鹊"，黑白花纹的猫称为"奶牛猫"）
-2. 以「你」为主语，写一段50-60字的中文偶遇日志，记录「你」今天和这只动物之间发生了什么。动物是主导者，你只是它今天遭遇的环境的一部分，地位对等或略低于它。
+2. 生成一个10字以内的偶遇小标题，语气简练有趣，像一篇微型档案的标题，例如"领地巡查官驾到"、"橘猫的午后判决"
+3. 以「你」为主语，写一段50-60字的中文偶遇日志，记录「你」今天和这只动物之间发生了什么。动物是主导者，你只是它今天遭遇的环境的一部分，地位对等或略低于它。
 
 风格：
 - 语气像App在为你出具一份正式的偶遇档案
@@ -59,7 +60,7 @@ export async function recognizeAnimal(imageBase64, location = '') {
 
 参考例句：'在武汉，你的膝盖被一只奶牛猫征用为限时靠垫。它刚完成领地例行巡视，此刻眯着眼，对你是否舒适这件事毫无兴趣。'
 
-返回JSON格式（不要有其他内容）：{"species": "...", "journal": "在${locationText}，你..."}`
+返回JSON格式（不要有其他内容）：{"title": "...", "species": "...", "journal": "在${locationText}，你..."}`
               },
               {
                 type: 'image_url',
@@ -99,22 +100,27 @@ export async function recognizeAnimal(imageBase64, location = '') {
     if (!result.species) {
       return {
         success: false,
+        title: null,
         species: null,
         journal: null,
         error: '未能识别出动物，请尝试上传更清晰的动物照片'
       }
     }
 
+    const rawTitle = result.title || result.species
+    const title = rawTitle.length > 15 ? rawTitle.slice(0, 15) : rawTitle
+
     return {
       success: true,
+      title,
       species: result.species,
       journal: result.journal,
       error: null
     }
   } catch (error) {
-    console.error('识别失败:', error)
     return {
       success: false,
+      title: null,
       species: null,
       journal: null,
       error: error.message || '识别失败，请检查网络连接后重试'
