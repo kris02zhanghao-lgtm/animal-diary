@@ -1,7 +1,8 @@
 # 项目进度
 
 ## 当前状态
-v0.3 主流程已跑通：AI 识别、保存、首页读取、删除都已在 Vercel 线上可用。下一步：补 Supabase 用户隔离（匿名登录 + RLS）后再正式对外分享。
+v0.3 正在推进「匿名登录 + RLS」用户隔离改造（openspec change `enable-anonymous-auth-rls`）。
+前置检查（第 1 组）已全部通过，生产环境保存能力已恢复。下一步开始第 2 组前端匿名登录改造。
 
 ## 已完成
 
@@ -121,14 +122,55 @@ v0.3 主流程已跑通：AI 识别、保存、首页读取、删除都已在 Ve
 - 能力子目录从 `temporary-public-record-write` 重命名为 `backend-record-proxy`，spec delta 重写为：前端禁止直连 Supabase，保存/读取/删除统一走后端代理
 - 变更目录 slug 保留 `allow-records-write-temporarily` 不改名，以保留 git 历史引用
 
+## 进行中
+
+### 匿名登录 + RLS 用户隔离改造 (enable-anonymous-auth-rls) 🔄 进行中
+- 已用 `/opsx:propose` 生成完整变更文档：proposal / design / specs（user-identity + record-storage 两份）/ tasks（共 9 组，含新增的 1.5 与 8.7 后约 40 条任务）
+- 已用 `/opsx:apply` 进入执行阶段，**第 1 组「前置检查」全部完成**，下一步进入第 2 组前端代码改造
+- **第 1 组完成结论**：
+  - [x] 1.1 Supabase Anonymous Sign-Ins 开关状态：关闭（符合预期基线）
+  - [x] 1.2 records 表 user_id 列配置正确：uuid 类型、default auth.uid()、外键 records_user_id_fkey → auth.users.id
+  - [x] 1.3 已导出当前 records 表 RLS 策略：共 6 条。其中 1~4（SELECT/INSERT/UPDATE/DELETE 针对 public 角色按 auth.uid() 过滤）**基本就是我们最终想要的**，可直接复用；5~6（Temporary allow anon insert，重复）是昨天排障遗留的宽松策略，第 7 组将删除；策略 3（UPDATE）缺 WITH CHECK，第 7 组将补充
+  - [x] 1.4 Vercel 环境变量核对：排障中发现 `VITE_SUPABASE_ANON_KEY` 与 `SUPABASE_SERVICE_ROLE_KEY` 两个变量值曾丢失，重新粘贴并 Redeploy 后两个变量可用；Vercel 对敏感变量会自动屏蔽 Development 环境并禁止从 UI 回读值，这是安全特性不是 bug
+  - [x] 1.5 **（临时过渡措施，新增任务）** records.user_id 列的 Allow Nullable 临时重新打开：因为当前后端代理仍使用 service role key（无身份 → `auth.uid()` 为 null），在 NOT NULL 约束下会触发 `null value in column "user_id" violates not-null constraint` 插入失败。此设置将在任务 8.7 收尾阶段再次关闭（届时所有写入都已携带登录 session，auth.uid() 一定非空）
+- **排障过程插曲**：
+  - 第一次诊断环境变量时被 Vercel UI 的"敏感变量值不可回读"特性误导，以为变量真空了
+  - 重新粘贴环境变量后撞上第二个问题（NOT NULL 约束），通过 F12 抓取 Vercel Function 返回的真实错误定位到根因
+  - 根因是前一步关闭 Allow Nullable 时未考虑对当前临时方案的连锁影响，已补 1.5 与 8.7 两条对称任务修正该疏漏
+- **范围缩减**：基于策略现状，原第 7 组"重写 RLS"工作量已缩减为"差量调整"——不需要 DROP 全部再 CREATE 4 条，只需删 2 条遗留策略 + 补 1 条 WITH CHECK
+- **OPENROUTER_API_KEY 变量名更正**：发现 CLAUDE.md 写的 `VITE_OPENROUTER_API_KEY` 与实际后端代理使用的 `OPENROUTER_API_KEY` 不一致，属于迁移到后端代理后未同步的老信息，后续可顺手修正
+
 ## 下一步
-- 接入 Supabase 匿名登录 + 完整 RLS，做正式用户隔离
-- 隔离完成后，再考虑正式对外公开分享链接
+- 开始第 2 组：前端匿名登录与 session 管理（authService + App 挂载前阻塞等待 session）
+- 按 tasks.md 顺序推进第 3~5 组（服务层携带 token、后端三个 API 改 token 初始化、本地 vercel dev 预演）
+- 第 6、7 两组涉及线上 Supabase 后台改动（开启匿名登录开关、调整 RLS 策略），会在对应步骤停下来等用户确认后再动手
+- 第 8.7 任务（关闭 Allow Nullable）作为最终收尾加固，必须在全链路验证通过后执行
+
+### 会话切分方案（Claude 额度规划）
+采用**方案 A 三段式**分会话推进：
+
+| 会话 | 内容 | 吃额度程度 |
+|------|------|-----------|
+| **会话 1（重）** | 第 2+3+4 组：前端 authService + App.jsx + 服务层 token + 后端三个 API 重构 | 🔴 密集，大部分代码改造集中在此 |
+| **会话 2（中）** | 第 5+6+7 组：`vercel dev` 本地测试 → Supabase 开启 Anonymous Sign-Ins → RLS 策略差量调整 | 🟡 中等，多是用户操作我在旁指挥 |
+| **会话 3（轻）** | 第 8+9 组：生产部署 + 全链路验证 + 8.7 收尾关闭 Allow Nullable + 文档清理 | 🟢 轻量，基本是贴结果我确认 |
+
+**已知可能让某段会话膨胀的风险点**（撞上需要预留 buffer）：
+1. 第 5 组 `vercel dev` 本地环境起不来类问题
+2. 第 8 组线上部署后前端白屏 / 登录失败，需要抓 F12 + 日志定位
+3. 第 7 组 RLS 策略调整后某条读写突然不通
+4. Supabase / Vercel Dashboard UI 再次出现类似今天敏感变量、作用域之类的幺蛾子
+
+**下次开对话的开场白**：直接告诉 Claude "接着做 enable-anonymous-auth-rls 第 2 组"，不用让它重读 progress.md。
 
 ## TODO（待处理）
-- 暂无
+- 按 tasks.md 推进第 2~9 组
+- 改造完成稳定观察 1-2 天后，评估归档 `allow-records-write-temporarily` 变更
+- 顺手修正 CLAUDE.md 中 `VITE_OPENROUTER_API_KEY` 为 `OPENROUTER_API_KEY`
 
 ## 未解决问题
-- 当前仍是临时可用版，尚未做用户数据隔离，公开分享后不同用户会互相看到/影响记录
+- 改造完成前仍无用户数据隔离，不应公开分享链接
+- 当前 records.user_id 为允许空的过渡状态（任务 1.5 开启，任务 8.7 关闭），期间若绕过正常写入路径可能产生 user_id 为空的记录（当前后端代理仍走 service role，已知会插入 null，但 RLS 读取会对所有用户返回空结果，属于可接受过渡代价）
 - 图片 base64 体积较大，记录多时可能带来请求体过大和存储压力（当前暂不处理）
 - 本地开发若要跑 `api/*`，需要使用 `vercel dev`，而不是仅 `npm run dev`
+- 匿名登录方案完成后，用户清除浏览器缓存、无痕模式或换设备/浏览器会被视为新用户看不到原有记录，这是产品预期不是 bug，将来通过升级为邮箱账号解决
