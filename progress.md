@@ -115,6 +115,12 @@ v0.3 主流程已跑通：AI 识别、保存、首页读取、删除都已在 Ve
 - `src/services/supabaseService.js` 已统一改为通过后端 API 处理 save/list/delete
 - 线上验证通过：上传照片 → AI 生成 → 保存 → 首页可见 → 删除可用
 
+### openspec 变更文档对齐 ✓ 已验收
+- `openspec/changes/allow-records-write-temporarily/` 原文档描述的是"放开 Supabase RLS 让 anon 直写"的旧方案，与实际落地的"后端代理 + service role key"不一致
+- 重写 proposal.md / design.md / tasks.md，改为描述真实落地方案
+- 能力子目录从 `temporary-public-record-write` 重命名为 `backend-record-proxy`，spec delta 重写为：前端禁止直连 Supabase，保存/读取/删除统一走后端代理
+- 变更目录 slug 保留 `allow-records-write-temporarily` 不改名，以保留 git 历史引用
+
 ## 下一步
 - 接入 Supabase 匿名登录 + 完整 RLS，做正式用户隔离
 - 隔离完成后，再考虑正式对外公开分享链接
