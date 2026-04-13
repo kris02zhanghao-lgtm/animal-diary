@@ -8,37 +8,37 @@
 
 ## 2. 前端：匿名登录与会话管理
 
-- [ ] 2.1 新增 `src/services/authService.js`：封装 `signInAnonymously`、`getSession`、`getAccessToken`、`onAuthStateChange`
-- [ ] 2.2 `src/services/supabaseClient.js` 验证仍在使用当前的 `VITE_SUPABASE_URL` 与 `VITE_SUPABASE_ANON_KEY`
-- [ ] 2.3 `src/App.jsx` 在首次挂载时调用 `authService.ensureSession()`，加 `authReady` 状态
-- [ ] 2.4 `authReady` 为 false 时渲染简单加载占位；为 true 后再渲染 ListPage / NewEncounterPage 路由
-- [ ] 2.5 登录失败分支：展示友好错误提示（"无法建立会话，请刷新重试"），不进入主业务
+- [x] 2.1 新增 `src/services/authService.js`：封装 `signInAnonymously`、`getSession`、`getAccessToken`、`onAuthStateChange`
+- [x] 2.2 `src/services/supabaseClient.js` 验证仍在使用当前的 `VITE_SUPABASE_URL` 与 `VITE_SUPABASE_ANON_KEY`
+- [x] 2.3 `src/App.jsx` 在首次挂载时调用 `authService.ensureSession()`，加 `authReady` 状态
+- [x] 2.4 `authReady` 为 false 时渲染简单加载占位；为 true 后再渲染 ListPage / NewEncounterPage 路由
+- [x] 2.5 登录失败分支：展示友好错误提示（"无法建立会话，请刷新重试"），不进入主业务
 
 ## 3. 前端：服务层携带 token
 
-- [ ] 3.1 `src/services/supabaseService.js` 的 `saveRecord` / `getRecords` / `deleteRecord` 在 fetch header 中加 `Authorization: Bearer <token>`
-- [ ] 3.2 如获取 token 失败则中止请求并抛错，由调用方捕获
-- [ ] 3.3 收到 401 响应时统一抛出可识别错误（供 UI 层展示"登录失效，请刷新页面"）
+- [x] 3.1 `src/services/supabaseService.js` 的 `saveRecord` / `getRecords` / `deleteRecord` 在 fetch header 中加 `Authorization: Bearer <token>`
+- [x] 3.2 如获取 token 失败则中止请求并抛错，由调用方捕获
+- [x] 3.3 收到 401 响应时统一抛出可识别错误（供 UI 层展示"登录失效，请刷新页面"）
 
 ## 4. 后端：三个 API 使用用户 token 初始化 Supabase client
 
-- [ ] 4.1 `api/save-record.js`：从 `req.headers.authorization` 读取 Bearer token，用 `createClient(url, anonKey, { global: { headers: { Authorization: 'Bearer ' + token } } })` 初始化；去掉 service role key 依赖
-- [ ] 4.2 `api/save-record.js`：token 缺失或无效返回 401
-- [ ] 4.3 `api/list-records.js`：同样改为 token 初始化，去掉 service role key
-- [ ] 4.4 `api/list-records.js`：保持按 `created_at` 降序返回
-- [ ] 4.5 `api/delete-record.js`：同样改为 token 初始化，去掉 service role key
-- [ ] 4.6 `api/delete-record.js`：Supabase 返回 0 行影响时识别为"删除被 RLS 拒绝"，返回明确错误信息
+- [x] 4.1 `api/save-record.js`：从 `req.headers.authorization` 读取 Bearer token，用 `createClient(url, anonKey, { global: { headers: { Authorization: 'Bearer ' + token } } })` 初始化；去掉 service role key 依赖
+- [x] 4.2 `api/save-record.js`：token 缺失或无效返回 401
+- [x] 4.3 `api/list-records.js`：同样改为 token 初始化，去掉 service role key
+- [x] 4.4 `api/list-records.js`：保持按 `created_at` 降序返回
+- [x] 4.5 `api/delete-record.js`：同样改为 token 初始化，去掉 service role key
+- [x] 4.6 `api/delete-record.js`：Supabase 返回 0 行影响时识别为"删除被 RLS 拒绝"，返回明确错误信息
 
 ## 5. 本地预演（vercel dev，RLS 尚未改动）
 
-- [ ] 5.1 用 `vercel dev` 启动完整本地环境
-- [ ] 5.2 手动测试：前端可成功匿名登录并拿到 token（通过 devtools 查看 localStorage 和 network）
-- [ ] 5.3 手动测试：保存 / 读取 / 删除全链路通（此时 RLS 还是旧的宽松策略，验证的是前后端 token 传递没坏）
+- [x] 5.1 用 `vercel dev` 启动完整本地环境
+- [x] 5.2 手动测试：前端可成功匿名登录并拿到 token（通过 devtools 查看 localStorage 和 network）
+- [x] 5.3 手动测试：保存 / 读取 / 删除全链路通（此时 RLS 还是旧的宽松策略，验证的是前后端 token 传递没坏）
 
 ## 6. 开启 Supabase Anonymous Sign-Ins
 
-- [ ] 6.1 在 Supabase Dashboard → Authentication → Providers（或 Sign In / Up）→ 开启 Anonymous Sign-Ins
-- [ ] 6.2 在预览部署中再次验证前端能获取匿名 session（无痕窗口打开预览地址）
+- [x] 6.1 在 Supabase Dashboard → Authentication → Providers（或 Sign In / Up）→ 开启 Anonymous Sign-Ins
+- [x] 6.2 在预览部署中再次验证前端能获取匿名 session（无痕窗口打开预览地址）
 
 ## 7. 调整 records 表 RLS 策略（基于现有策略差量更新，非整体重写）
 
