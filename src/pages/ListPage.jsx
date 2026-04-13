@@ -363,6 +363,9 @@ function ListPage({ onNavigate }) {
         </div>
       )}
 
+      {/* 匿名模式提示 */}
+      <p className="text-center text-xs text-gray-400 py-4">匿名模式，记录与本设备绑定</p>
+
       {/* 浮动添加按钮 */}
       <button
         onClick={() => onNavigate('new')}

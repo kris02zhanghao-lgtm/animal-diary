@@ -1,9 +1,9 @@
 # 项目进度
 
 ## 当前状态
-v0.3 正在推进「匿名登录 + RLS」用户隔离改造（openspec change `enable-anonymous-auth-rls`）。
-第 1~6 组已全部完成（24/40 任务），本地 `vercel dev` 全链路验证通过（保存/读取/删除均正常）。
-下一步：第 7 组 Supabase RLS 策略差量调整（需在 SQL Editor 执行 SQL）。
+v0.3「匿名登录 + RLS 用户隔离改造」已全部完成（40/40 任务）。
+线上生产环境验证通过：自动匿名登录、数据隔离（不同设备看不到彼此记录）、保存/读取/删除全链路正常。
+下一步：评估归档 `enable-anonymous-auth-rls` 变更，然后开始 v0.4 图鉴收集页。
 
 ## 已完成
 
@@ -123,19 +123,22 @@ v0.3 正在推进「匿名登录 + RLS」用户隔离改造（openspec change `e
 - 能力子目录从 `temporary-public-record-write` 重命名为 `backend-record-proxy`，spec delta 重写为：前端禁止直连 Supabase，保存/读取/删除统一走后端代理
 - 变更目录 slug 保留 `allow-records-write-temporarily` 不改名，以保留 git 历史引用
 
-## 进行中
+## 已完成（本轮新增）
 
-### 匿名登录 + RLS 用户隔离改造 (enable-anonymous-auth-rls) 🔄 进行中
-- 已完成第 1~6 组（24/40 任务），本地 `vercel dev` 全链路验证通过
-- **第 2 组**：新增 `src/services/authService.js`（封装 ensureSession / getAccessToken）；`App.jsx` 改用 authService，加 authReady / authError 状态，登录失败友好提示
-- **第 3 组**：`supabaseService.js` 三个 fetch 统一加 `Authorization: Bearer <token>` header，token 缺失抛错，401 响应抛"登录已失效"
-- **第 4 组**：三个后端 API（save/list/delete-record）改为从 header 读 token，用 anon key + token 初始化 Supabase client，去掉 service role key 依赖；delete 加 .select() 检测 RLS 拒绝返回 403
-- **第 5+6 组**：开启 Supabase Anonymous Sign-Ins；本地 `vercel dev` 验证：登录成功拿到 token → 保存 → 首页可见 → 删除，全链路通过
+### 匿名登录 + RLS 用户隔离改造 (enable-anonymous-auth-rls) ✓ 已验收
+- 新增 `src/services/authService.js`：封装 ensureSession / getAccessToken
+- `App.jsx` 改用 authService，加 authReady / authError 状态
+- `supabaseService.js` 三个 fetch 统一加 `Authorization: Bearer <token>` header
+- 三个后端 API 改为 token 初始化，去掉 service role key 日常路径
+- Supabase 开启 Anonymous Sign-Ins，RLS 策略清理至 4 条（删遗留 2 条 + 补 UPDATE WITH CHECK）
+- 生产全链路验证通过：自动登录、保存、读取、删除、数据隔离均正常
+- records.user_id 列 NOT NULL 约束恢复，安全加固完成
+- ListPage 底部加"匿名模式，记录与本设备绑定"小字提示
 
 ## 下一步
-- 第 7 组：Supabase SQL Editor 执行差量 RLS 调整（删 2 条遗留策略 + 补 UPDATE WITH CHECK）
-- 第 8 组：生产部署 + 全链路验证 + 8.7 关闭 Allow Nullable
-- 第 9 组：清理 service role key import + 更新文档
+- 归档 `enable-anonymous-auth-rls` 变更（`/opsx:archive`）
+- 开始 v0.4：图鉴收集页（首页时间线/图鉴 tab 切换）
+- 顺手修正 CLAUDE.md 中 `VITE_OPENROUTER_API_KEY` 为 `OPENROUTER_API_KEY`
 
 ### 会话切分方案（Claude 额度规划）
 采用**方案 A 三段式**分会话推进：
@@ -160,8 +163,6 @@ v0.3 正在推进「匿名登录 + RLS」用户隔离改造（openspec change `e
 - 顺手修正 CLAUDE.md 中 `VITE_OPENROUTER_API_KEY` 为 `OPENROUTER_API_KEY`
 
 ## 未解决问题
-- 改造完成前仍无用户数据隔离，不应公开分享链接
-- 当前 records.user_id 为允许空的过渡状态（任务 1.5 开启，任务 8.7 关闭），期间若绕过正常写入路径可能产生 user_id 为空的记录（当前后端代理仍走 service role，已知会插入 null，但 RLS 读取会对所有用户返回空结果，属于可接受过渡代价）
 - 图片 base64 体积较大，记录多时可能带来请求体过大和存储压力（当前暂不处理）
 - 本地开发若要跑 `api/*`，需要使用 `vercel dev`，而不是仅 `npm run dev`
-- 匿名登录方案完成后，用户清除浏览器缓存、无痕模式或换设备/浏览器会被视为新用户看不到原有记录，这是产品预期不是 bug，将来通过升级为邮箱账号解决
+- 用户清除浏览器缓存、无痕模式或换设备/浏览器会被视为新用户看不到原有记录，这是产品预期，将来通过升级为邮箱账号解决
