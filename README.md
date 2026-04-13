@@ -1,16 +1,44 @@
-# React + Vite
+# 动物偶遇图鉴
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+用 AI 记录城市中偶遇小动物的个人图鉴 web app。上传照片，AI 自动识别动物种类并生成趣味日志，保存到专属图鉴中慢慢回味。
 
-Currently, two official plugins are available:
+## 功能
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- 上传照片，AI 自动识别动物种类并生成偶遇日志
+- 支持手动编辑 AI 生成的内容
+- 按季度分组展示偶遇记录
+- 卡片展开查看大图与完整日志
+- 匿名登录，数据与设备绑定，无需注册
 
-## React Compiler
+## 技术栈
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **前端**：React + Vite + Tailwind CSS
+- **后端**：Vercel Functions
+- **数据库**：Supabase PostgreSQL（Row Level Security 数据隔离）
+- **认证**：Supabase Anonymous Auth
+- **AI**：OpenRouter API（Google Gemini Flash Lite）
+- **部署**：Vercel
 
-## Expanding the ESLint configuration
+## 本地开发
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+# 安装依赖
+npm install
+
+# 启动（需要同时跑前端和后端 API）
+vercel dev
+```
+
+在项目根目录创建 `.env` 文件并填入：
+
+```
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+OPENROUTER_API_KEY=
+```
+
+## 线上地址
+
+> 国内访问需要梯子
+
+https://animal-diary-kris-kris-kris-projects.vercel.app
