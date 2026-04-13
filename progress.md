@@ -136,9 +136,9 @@ v0.3「匿名登录 + RLS 用户隔离改造」已全部完成（40/40 任务）
 - ListPage 底部加"匿名模式，记录与本设备绑定"小字提示
 
 ## 下一步
-- 归档 `enable-anonymous-auth-rls` 变更（`/opsx:archive`）
 - 开始 v0.4：图鉴收集页（首页时间线/图鉴 tab 切换）
 - 顺手修正 CLAUDE.md 中 `VITE_OPENROUTER_API_KEY` 为 `OPENROUTER_API_KEY`
+- 后续计划购买自定义域名（当前 vercel.app 域名在国内需要梯子访问）
 
 ### 会话切分方案（Claude 额度规划）
 采用**方案 A 三段式**分会话推进：
