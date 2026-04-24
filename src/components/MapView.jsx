@@ -60,6 +60,21 @@ function MapView() {
         })
         mapRef.current = map
         setMapReady(true)
+
+        // 显示当前位置蓝点，并在无记录时以用户位置为中心
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition((pos) => {
+            if (destroyed || !mapRef.current) return
+            const { latitude, longitude } = pos.coords
+            const dot = new window.AMap.Marker({
+              position: [longitude, latitude],
+              content: `<div style="width:16px;height:16px;border-radius:50%;background:#4A90E2;border:3px solid #fff;box-shadow:0 0 0 4px rgba(74,144,226,0.3)"></div>`,
+              offset: new window.AMap.Pixel(-8, -8),
+              zIndex: 200,
+            })
+            dot.setMap(mapRef.current)
+          }, () => {}, { timeout: 8000, enableHighAccuracy: false })
+        }
       })
       .catch(() => {})
     return () => {
