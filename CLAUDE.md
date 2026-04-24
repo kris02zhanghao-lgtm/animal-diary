@@ -11,7 +11,7 @@
 - Vercel部署
 
 ## 项目特有规则
-- API Key变量名：VITE_OPENROUTER_API_KEY
+- API Key变量名：OPENROUTER_API_KEY
 - 默认模型：google/gemini-2.5-flash-lite
 - .env文件不能上传GitHub
 - 每次commit后更新progress.md
