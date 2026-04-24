@@ -228,37 +228,39 @@ function ListPage({ onNavigate }) {
         /* 分组列表 */
         <div className="space-y-12 pb-24">
           {groupedRecords.map((group) => (
-            <div key={group.seasonKey} className="pb-8">
+            <div key={group.seasonKey} className="pb-16">
               {/* 分组标题 */}
               <h2 className="text-lg font-bold mb-4" style={{ color: 'var(--text-primary)' }}>{group.label}</h2>
 
               {/* Swiper 轮播 */}
-              <Swiper
-                modules={[EffectCoverflow]}
-                effect="coverflow"
-                grabCursor={true}
-                centeredSlides={true}
-                slidesPerView="auto"
-                spaceBetween={20}
-                coverflowEffect={{
-                  rotate: 0,
-                  stretch: 0,
-                  depth: 200,
-                  modifier: 1,
-                  scale: 0.8,
-                  slideShadows: false,
-                }}
-                className="w-full"
-              >
+              <div style={{ overflow: 'visible' }}>
+                <Swiper
+                  modules={[EffectCoverflow]}
+                  effect="coverflow"
+                  grabCursor={true}
+                  centeredSlides={true}
+                  slidesPerView="auto"
+                  spaceBetween={20}
+                  coverflowEffect={{
+                    rotate: 0,
+                    stretch: 0,
+                    depth: 200,
+                    modifier: 1,
+                    scale: 0.8,
+                    slideShadows: false,
+                  }}
+                  className="w-full"
+                  style={{ overflow: 'visible' }}
+                >
                 {group.items.map((record) => (
                   <SwiperSlide
                     key={record.id}
-                    style={{ width: '260px' }}
-                    className="flex justify-center"
+                    style={{ width: '260px', paddingTop: '20px', paddingBottom: '20px' }}
+                    className="flex justify-center items-start"
                   >
                     <div
                       className="w-64 rounded-2xl overflow-hidden relative transition-transform duration-300 hover:shadow-lg"
-                      style={{ background: 'rgb(247, 243, 223)', boxShadow: '0 4px 10px rgba(107, 92, 67, 0.42)' }}
+                      style={{ background: 'rgb(247, 243, 223)', boxShadow: '0 4px 10px rgba(107, 92, 67, 0.42)', marginBottom: '12px' }}
                       onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
                       onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                     >
@@ -349,7 +351,8 @@ function ListPage({ onNavigate }) {
                     </div>
                   </SwiperSlide>
                 ))}
-              </Swiper>
+                </Swiper>
+              </div>
             </div>
           ))}
         </div>
