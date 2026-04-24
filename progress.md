@@ -3,7 +3,12 @@
 ## 当前状态
 v0.3「匿名登录 + RLS 用户隔离改造」已全部完成（40/40 任务）。
 线上生产环境验证通过：自动匿名登录、数据隔离（不同设备看不到彼此记录）、保存/读取/删除全链路正常。
-下一步：评估归档 `enable-anonymous-auth-rls` 变更，然后开始 v0.4 图鉴收集页。
+
+**新增（2026-04-24）**：
+- 创建 `design.md`，整理参考 Animal Island UI 的完整设计规范（颜色、圆角、阴影、动画等）
+- 规划：先升级整体 UI（参照 design.md），然后做 v0.4 图鉴收集页
+
+下一步：按 design.md 升级 UI（列表页、新建页、卡片等样式），确保参赛级别的质感。
 
 ## 已完成
 
@@ -125,6 +130,11 @@ v0.3「匿名登录 + RLS 用户隔离改造」已全部完成（40/40 任务）
 
 ## 已完成（本轮新增）
 
+### UI 设计规范文档 ✓ 已创建
+- 新增 `design.md`，系统整理参考 Animal Island UI 的完整设计规范
+- 包含：颜色体系、排版、间距、圆角、3D 阴影、动画、组件模式等
+- 后续 UI 改造和新功能开发都参照此文档，确保风格统一
+
 ### 匿名登录 + RLS 用户隔离改造 (enable-anonymous-auth-rls) ✓ 已验收
 - 新增 `src/services/authService.js`：封装 ensureSession / getAccessToken
 - `App.jsx` 改用 authService，加 authReady / authError 状态
@@ -136,8 +146,8 @@ v0.3「匿名登录 + RLS 用户隔离改造」已全部完成（40/40 任务）
 - ListPage 底部加"匿名模式，记录与本设备绑定"小字提示
 
 ## 下一步
-- 开始 v0.4：图鉴收集页（首页时间线/图鉴 tab 切换）
-- 顺手修正 CLAUDE.md 中 `VITE_OPENROUTER_API_KEY` 为 `OPENROUTER_API_KEY`
+- **UI 升级**（参赛优先）：按 design.md 改造列表页、新建页、卡片、弹窗等样式
+- **v0.4**：图鉴收集页（首页时间线/图鉴 tab 切换）
 - 后续计划购买自定义域名（当前 vercel.app 域名在国内需要梯子访问）
 
 ### 会话切分方案（Claude 额度规划）
