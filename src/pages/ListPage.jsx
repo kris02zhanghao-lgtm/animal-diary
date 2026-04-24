@@ -142,15 +142,22 @@ function ListPage({ onNavigate }) {
               </button>
               {expandingMenuId === expandedId && (
                 <div
-                  className="absolute right-0 top-8 bg-white rounded-lg shadow-lg z-20"
-                  style={{ border: '2px solid #5a4a3a', minWidth: '120px' }}
+                  className="absolute right-0 top-8 z-20 rounded-xl overflow-hidden"
+                  style={{
+                    background: 'rgb(247, 243, 223)',
+                    boxShadow: '0 4px 10px rgba(107, 92, 67, 0.42)',
+                    minWidth: '120px'
+                  }}
                 >
                   <button
                     onClick={() => {
                       alert('即将上线，敬请期待！')
                       setExpandingMenuId(null)
                     }}
-                    className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 first:rounded-t-md"
+                    className="block w-full text-left px-4 py-2 text-sm first:rounded-t-md"
+                    style={{ color: '#794f27' }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#f0e8d8'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   >
                     分享
                   </button>
@@ -159,7 +166,10 @@ function ListPage({ onNavigate }) {
                       setConfirmingId(expandedRecord.id)
                       setExpandingMenuId(null)
                     }}
-                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 last:rounded-b-md"
+                    className="block w-full text-left px-4 py-2 text-sm last:rounded-b-md"
+                    style={{ color: '#e05a5a' }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#f0e8d8'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                   >
                     删除
                   </button>
@@ -177,7 +187,8 @@ function ListPage({ onNavigate }) {
             <img
               src={expandedRecord.imageBase64}
               alt={expandedRecord.species}
-              className="w-full max-h-96 object-contain bg-gray-100"
+              className="w-full max-h-96 object-contain"
+              style={{ background: 'rgb(247, 243, 223)' }}
             />
 
             {/* 完整日志 */}
@@ -217,7 +228,7 @@ function ListPage({ onNavigate }) {
         /* 分组列表 */
         <div className="space-y-12 pb-24">
           {groupedRecords.map((group) => (
-            <div key={group.seasonKey}>
+            <div key={group.seasonKey} className="pb-8">
               {/* 分组标题 */}
               <h2 className="text-lg font-bold mb-4" style={{ color: 'var(--text-primary)' }}>{group.label}</h2>
 
@@ -264,15 +275,22 @@ function ListPage({ onNavigate }) {
 
                         {expandingMenuId === record.id && (
                           <div
-                            className="absolute right-0 top-10 bg-white rounded-lg shadow-lg z-20"
-                            style={{ border: '2px solid #5a4a3a', minWidth: '100px' }}
+                            className="absolute right-0 top-10 z-20 rounded-xl overflow-hidden"
+                            style={{
+                              background: 'rgb(247, 243, 223)',
+                              boxShadow: '0 4px 10px rgba(107, 92, 67, 0.42)',
+                              minWidth: '100px'
+                            }}
                           >
                             <button
                               onClick={() => {
                                 setExpandedId(record.id)
                                 setExpandingMenuId(null)
                               }}
-                              className="block w-full text-left px-3 py-2 text-xs hover:bg-gray-100 first:rounded-t-md"
+                              className="block w-full text-left px-3 py-2 text-xs first:rounded-t-md"
+                              style={{ color: '#794f27' }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = '#f0e8d8'}
+                              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                             >
                               展开
                             </button>
@@ -281,7 +299,10 @@ function ListPage({ onNavigate }) {
                                 alert('即将上线，敬请期待！')
                                 setExpandingMenuId(null)
                               }}
-                              className="block w-full text-left px-3 py-2 text-xs hover:bg-gray-100"
+                              className="block w-full text-left px-3 py-2 text-xs"
+                              style={{ color: '#794f27' }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = '#f0e8d8'}
+                              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                             >
                               分享
                             </button>
@@ -290,7 +311,10 @@ function ListPage({ onNavigate }) {
                                 setConfirmingId(record.id)
                                 setExpandingMenuId(null)
                               }}
-                              className="block w-full text-left px-3 py-2 text-xs text-red-600 hover:bg-red-50 last:rounded-b-md"
+                              className="block w-full text-left px-3 py-2 text-xs last:rounded-b-md"
+                              style={{ color: '#e05a5a' }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = '#f0e8d8'}
+                              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                             >
                               删除
                             </button>
