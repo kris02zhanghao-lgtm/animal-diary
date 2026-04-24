@@ -1,19 +1,18 @@
 # 项目进度
 
 ## 当前状态
-🚧 **v0.4「偶遇地图 + 自动定位」开发中（38/46 任务完成）**
+🚧 **v0.4「偶遇地图 + 自动定位」测试中，待修复已知问题**
 
-**2026-04-24 已完成第 1-7 组任务（核心功能全部实现）**：
-- ✅ 第 1 组：Supabase records 表新增 latitude/longitude 列，save-record.js 支持保存坐标
-- ✅ 第 2 组：AnimalEmojiMapper 模块（L1精确/L2关键词/L3兜底，13个测试全通过）
-- ✅ 第 3 组：NewEncounterPage 自动定位（useEffect + Geolocation API，状态提示 UI）
-- ✅ 第 4 组：底部导航栏（BottomTabBar 4个 tab，App.jsx activePage 状态管理，移除原浮动按钮和顶部 tab）
-- ✅ 第 5 组：MapView 组件创建，高德地图 CDN 动态加载，init/cleanup，高度 calc(100vh-64px)
-- ✅ 第 6 组：Emoji Marker 渲染（过滤坐标记录、自定义 44px marker、fitView 适配、空状态提示）
-- ✅ 第 7 组：Marker 点击详情卡片（selectedRecord state、底部 sheet、emoji+物种+图+地点+日期、遮罩关闭）
-- 待部署到 Vercel 验证
+**2026-04-24 核心功能全部实现并部署**：
+- ✅ 第 1-7 组全部完成并推送 Vercel
+- ✅ 地图蓝点显示当前位置，定位成功后自动居中
+- ✅ 图片上传前压缩到 800px，减小文件体积
+- ✅ AI 识别请求加 30 秒超时保护
+- ✅ 定位失败区分「权限拒绝」和「定位不可用」两种提示
 
-下一步：部署到 Vercel，手动测试验证（第 8 组），然后收尾（第 9 组）
+**待修复问题（下次继续）**：
+- 🐛 手机端 AI 识别卡住不报错：错误提示在页面底部被遮挡，用户看不到；同时 recognize.js 内对 OpenRouter 的请求无超时，Vercel 函数可能服务端挂起
+- 具体修复方向：① 错误提示移到 AI 按钮下方或改为顶部 toast；② recognize.js 对 OpenRouter fetch 加超时限制（如 25 秒）
 
 ## 已完成
 
