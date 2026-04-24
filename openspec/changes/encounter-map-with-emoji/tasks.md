@@ -36,28 +36,28 @@
 
 ## 5. MapView 组件 - 基础地图
 
-- [ ] 5.1 创建 src/components/MapView.jsx
-- [ ] 5.2 在 index.html 中通过 CDN 加载高德地图 JS API v2（需申请 Key）
-- [ ] 5.3 CLAUDE.md / .env 记录高德 AMAP_KEY 变量
-- [ ] 5.4 MapView 组件挂载时初始化高德地图实例（useEffect）
-- [ ] 5.5 地图销毁时清理实例（useEffect cleanup）
-- [ ] 5.6 地图容器高度：占满剩余视口高度（calc(100vh - header - tab)）
+- [x] 5.1 创建 src/components/MapView.jsx
+- [x] 5.2 在 index.html 中通过 CDN 加载高德地图 JS API v2（需申请 Key）
+- [x] 5.3 CLAUDE.md / .env 记录高德 AMAP_KEY 变量
+- [x] 5.4 MapView 组件挂载时初始化高德地图实例（useEffect）
+- [x] 5.5 地图销毁时清理实例（useEffect cleanup）
+- [x] 5.6 地图容器高度：占满剩余视口高度（calc(100vh - header - tab)）
 
 ## 6. MapView 组件 - Emoji 标记渲染
 
-- [ ] 6.1 MapView 接收 records props，过滤出有 latitude/longitude 的记录
-- [ ] 6.2 对每条记录调用 getEmojiForSpecies 获取 emoji，创建自定义 AMap.Marker
-- [ ] 6.3 实现自定义 Marker HTML（div + emoji 大字，40px 以上触摸目标）
-- [ ] 6.4 所有 marker 渲染后，调用地图 fitView 自动缩放适配
-- [ ] 6.5 无记录时，显示占位提示文字在地图上方
+- [x] 6.1 MapView 接收 records props，过滤出有 latitude/longitude 的记录
+- [x] 6.2 对每条记录调用 getEmojiForSpecies 获取 emoji，创建自定义 AMap.Marker
+- [x] 6.3 实现自定义 Marker HTML（div + emoji 大字，40px 以上触摸目标）
+- [x] 6.4 所有 marker 渲染后，调用地图 fitView 自动缩放适配
+- [x] 6.5 无记录时，显示占位提示文字在地图上方
 
 ## 7. Marker 点击展开详情
 
-- [ ] 7.1 MapView 新增 selectedRecord state
-- [ ] 7.2 点击 marker 时，更新 selectedRecord 为对应记录
-- [ ] 7.3 selectedRecord 不为 null 时，在地图上方（或底部 sheet）显示简易详情卡片
-- [ ] 7.4 详情卡片内容：物种 emoji + 名称、地点、日期、缩略图（max-h-32）
-- [ ] 7.5 详情卡片有关闭按钮或点击遮罩关闭
+- [x] 7.1 MapView 新增 selectedRecord state
+- [x] 7.2 点击 marker 时，更新 selectedRecord 为对应记录
+- [x] 7.3 selectedRecord 不为 null 时，在地图上方（或底部 sheet）显示简易详情卡片
+- [x] 7.4 详情卡片内容：物种 emoji + 名称、地点、日期、缩略图（max-h-32）
+- [x] 7.5 详情卡片有关闭按钮或点击遮罩关闭
 
 ## 8. 测试与调试
 

@@ -13,6 +13,7 @@
 ## 项目特有规则
 - API Key变量名：OPENROUTER_API_KEY
 - 默认模型：google/gemini-2.5-flash-lite
+- 高德地图 Key 变量名：VITE_AMAP_KEY / VITE_AMAP_SECURITY_CODE
 - .env文件不能上传GitHub
 - 每次commit后更新progress.md
 - 项目PRD见PRD.md，其中标注了MVP范围和版本规划
