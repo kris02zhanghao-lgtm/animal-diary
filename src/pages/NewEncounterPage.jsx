@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { saveRecord } from '../services/supabaseService'
 
 function NewEncounterPage({ onNavigate }) {
@@ -11,6 +11,23 @@ function NewEncounterPage({ onNavigate }) {
   const [recognizedAt, setRecognizedAt] = useState(null)
   const [error, setError] = useState(null)
   const [saveError, setSaveError] = useState(null)
+  const [geoStatus, setGeoStatus] = useState('idle')
+  const [coordinates, setCoordinates] = useState(null)
+
+  useEffect(() => {
+    if (!navigator.geolocation) return
+    setGeoStatus('loading')
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoordinates({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        setGeoStatus('success')
+      },
+      () => {
+        setGeoStatus('denied')
+      },
+      { timeout: 10000 }
+    )
+  }, [])
 
   const handleImageSelect = (e) => {
     const file = e.target.files[0]
@@ -65,6 +82,8 @@ function NewEncounterPage({ onNavigate }) {
         title,
         species,
         journal,
+        latitude: coordinates?.lat ?? null,
+        longitude: coordinates?.lng ?? null,
       })
       onNavigate('list')
     } catch {
@@ -194,6 +213,22 @@ function NewEncounterPage({ onNavigate }) {
               />
             </div>
           </div>
+          {/* 定位状态提示 */}
+          {geoStatus === 'loading' && (
+            <div className="px-5 pb-3" style={{ background: '#f5ede0' }}>
+              <span className="text-xs text-[#a08060]">定位中...</span>
+            </div>
+          )}
+          {geoStatus === 'success' && (
+            <div className="px-5 pb-3" style={{ background: '#f5ede0' }}>
+              <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#e8d9c0', color: '#7a5c3a' }}>📍 已自动定位</span>
+            </div>
+          )}
+          {geoStatus === 'denied' && (
+            <div className="px-5 pb-3" style={{ background: '#f5ede0' }}>
+              <span className="text-xs text-[#b0a090]">无法获取位置，请手动输入</span>
+            </div>
+          )}
         </div>
 
         {/* 操作按钮 */}

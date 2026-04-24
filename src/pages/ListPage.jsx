@@ -5,7 +5,7 @@ import 'swiper/css'
 import 'swiper/css/effect-coverflow'
 import { getRecords, deleteRecord } from '../services/supabaseService'
 
-function ListPage({ onNavigate }) {
+function ListPage() {
   const [records, setRecords] = useState([])
   const [confirmingId, setConfirmingId] = useState(null)
   const [expandedId, setExpandedId] = useState(null)
@@ -102,16 +102,6 @@ function ListPage({ onNavigate }) {
       >
         我的动物图鉴
       </h1>
-
-      {/* Tab 占位 UI */}
-      <div className="flex gap-6 justify-center mb-8">
-        <button className="pb-2 font-bold" style={{ color: 'var(--text-primary)', borderBottom: `3px solid var(--primary-color)` }}>
-          时间线
-        </button>
-        <button className="pb-2" style={{ color: 'var(--text-secondary)' }} onClick={() => {}}>
-          图鉴
-        </button>
-      </div>
 
       {loadError && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -395,15 +385,6 @@ function ListPage({ onNavigate }) {
 
       {/* 匿名模式提示 */}
       <p className="text-center text-xs text-gray-400 py-4">匿名模式，记录与本设备绑定</p>
-
-      {/* 浮动添加按钮 */}
-      <button
-        onClick={() => onNavigate('new')}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-[#7cb342] text-white text-2xl shadow-lg flex items-center justify-center hover:bg-[#6a9e38] transition-colors"
-        aria-label="添加新记录"
-      >
-        +
-      </button>
     </div>
   )
 }

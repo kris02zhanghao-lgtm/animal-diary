@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react'
 import { ensureSession } from './services/authService'
 import ListPage from './pages/ListPage'
 import NewEncounterPage from './pages/NewEncounterPage'
+import BottomTabBar from './components/BottomTabBar'
 
 function App() {
-  const [currentPage, setCurrentPage] = useState('list')
+  const [activePage, setActivePage] = useState('timeline')
   const [authReady, setAuthReady] = useState(false)
   const [authError, setAuthError] = useState(null)
 
@@ -13,10 +14,6 @@ function App() {
       .then(() => setAuthReady(true))
       .catch(() => setAuthError('无法建立会话，请刷新重试'))
   }, [])
-
-  const navigateTo = (page) => {
-    setCurrentPage(page)
-  }
 
   if (authError) {
     return (
@@ -36,8 +33,13 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#fffdf7]">
-      {currentPage === 'list' && <ListPage onNavigate={navigateTo} />}
-      {currentPage === 'new' && <NewEncounterPage onNavigate={navigateTo} />}
+      {activePage === 'timeline' && <ListPage />}
+      {activePage === 'new' && (
+        <NewEncounterPage onNavigate={() => setActivePage('timeline')} />
+      )}
+      {activePage !== 'new' && (
+        <BottomTabBar active={activePage} onChange={setActivePage} />
+      )}
     </div>
   )
 }
