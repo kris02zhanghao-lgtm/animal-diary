@@ -68,12 +68,17 @@ function NewEncounterPage({ onNavigate }) {
     setError(null)
     setSaveError(null)
 
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30000)
+
     try {
       const response = await fetch('/api/recognize', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageBase64: selectedImage, location }),
+        signal: controller.signal,
       })
+      clearTimeout(timeoutId)
       const result = await response.json()
 
       if (result.success) {
@@ -84,8 +89,13 @@ function NewEncounterPage({ onNavigate }) {
       } else {
         setError(result.error || '识别失败，请重试')
       }
-    } catch {
-      setError('网络错误，请检查连接后重试')
+    } catch (e) {
+      clearTimeout(timeoutId)
+      if (e.name === 'AbortError') {
+        setError('识别超时（30秒），请重试')
+      } else {
+        setError('网络错误，请检查连接后重试')
+      }
     } finally {
       setIsLoading(false)
     }
