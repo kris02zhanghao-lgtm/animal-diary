@@ -1,6 +1,28 @@
 import { useState, useEffect } from 'react'
 import { saveRecord } from '../services/supabaseService'
 
+function compressImage(file, maxSize = 800) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      const canvas = document.createElement('canvas')
+      let { width, height } = img
+      if (width > height) {
+        if (width > maxSize) { height = Math.round(height * maxSize / width); width = maxSize }
+      } else {
+        if (height > maxSize) { width = Math.round(width * maxSize / height); height = maxSize }
+      }
+      canvas.width = width
+      canvas.height = height
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height)
+      resolve(canvas.toDataURL('image/jpeg', 0.82))
+    }
+    img.src = url
+  })
+}
+
 function NewEncounterPage({ onNavigate }) {
   const [selectedImage, setSelectedImage] = useState(null)
   const [location, setLocation] = useState('')
@@ -29,16 +51,13 @@ function NewEncounterPage({ onNavigate }) {
     )
   }, [])
 
-  const handleImageSelect = (e) => {
+  const handleImageSelect = async (e) => {
     const file = e.target.files[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setSelectedImage(reader.result)
-        setRecognizedAt(null)
-        setError(null)
-      }
-      reader.readAsDataURL(file)
+      const compressed = await compressImage(file)
+      setSelectedImage(compressed)
+      setRecognizedAt(null)
+      setError(null)
     }
   }
 
