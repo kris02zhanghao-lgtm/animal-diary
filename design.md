@@ -1,6 +1,7 @@
 # 动物偶遇图鉴 - UI 设计规范
 
-参考自 [Animal Island UI](https://github.com/guokaigdg/animal-island-ui) 的动物森友会风格设计系统。
+UI 风格灵感来自《动物森友会》游戏界面的设计美学。  
+设计系统参考学习了 [Animal Island UI](https://github.com/guokaigdg/animal-island-ui) 的理念（MIT License）。
 
 ## 色彩体系
 
@@ -236,5 +237,9 @@ padding-lg：0 22px
 
 ---
 
-最后更新：2026-04-24  
-参考项目：https://github.com/guokaigdg/animal-island-ui
+最后更新：2026-04-24
+
+## 参考与致谢
+
+- **设计灵感**：《动物森友会》（Nintendo）游戏界面美学
+- **设计系统参考**：[Animal Island UI](https://github.com/guokaigdg/animal-island-ui)（MIT License）
