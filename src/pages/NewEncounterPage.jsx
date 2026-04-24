@@ -22,8 +22,8 @@ function NewEncounterPage({ onNavigate }) {
         setCoordinates({ lat: pos.coords.latitude, lng: pos.coords.longitude })
         setGeoStatus('success')
       },
-      () => {
-        setGeoStatus('denied')
+      (err) => {
+        setGeoStatus(err.code === 1 ? 'denied' : 'unavailable')
       },
       { timeout: 10000 }
     )
@@ -226,7 +226,12 @@ function NewEncounterPage({ onNavigate }) {
           )}
           {geoStatus === 'denied' && (
             <div className="px-5 pb-3" style={{ background: '#f5ede0' }}>
-              <span className="text-xs text-[#b0a090]">无法获取位置，请手动输入</span>
+              <span className="text-xs text-[#b0a090]">位置权限已拒绝，请手动输入</span>
+            </div>
+          )}
+          {geoStatus === 'unavailable' && (
+            <div className="px-5 pb-3" style={{ background: '#f5ede0' }}>
+              <span className="text-xs text-[#b0a090]">定位暂不可用，请手动输入（手机端效果更好）</span>
             </div>
           )}
         </div>

@@ -61,11 +61,12 @@ function MapView() {
         mapRef.current = map
         setMapReady(true)
 
-        // 显示当前位置蓝点，并在无记录时以用户位置为中心
+        // 显示当前位置蓝点，并把地图中心移到用户位置
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition((pos) => {
             if (destroyed || !mapRef.current) return
             const { latitude, longitude } = pos.coords
+            mapRef.current.setCenter([longitude, latitude])
             const dot = new window.AMap.Marker({
               position: [longitude, latitude],
               content: `<div style="width:16px;height:16px;border-radius:50%;background:#4A90E2;border:3px solid #fff;box-shadow:0 0 0 4px rgba(74,144,226,0.3)"></div>`,
