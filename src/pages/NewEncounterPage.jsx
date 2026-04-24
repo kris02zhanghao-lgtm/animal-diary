@@ -86,15 +86,16 @@ function NewEncounterPage({ onNavigate }) {
   return (
     <div className="min-h-screen bg-[#fffdf7]">
       {/* Header */}
-      <header className="flex items-center px-4 py-4 border-b border-gray-200">
+      <header className="flex items-center px-4 py-4" style={{ borderBottom: `1px solid var(--border-color)`, background: 'var(--bg-primary)' }}>
         <button
           onClick={() => onNavigate('list')}
-          className="text-2xl text-gray-700 hover:text-gray-900"
+          className="text-2xl"
+          style={{ color: 'var(--text-primary)' }}
           aria-label="返回"
         >
           ←
         </button>
-        <h1 className="flex-1 text-center text-lg font-medium text-gray-800">
+        <h1 className="flex-1 text-center text-lg font-medium" style={{ color: 'var(--text-primary)' }}>
           记录偶遇
         </h1>
         <div className="w-8" />
@@ -137,7 +138,7 @@ function NewEncounterPage({ onNavigate }) {
         <button
           onClick={handleGenerateLog}
           disabled={isLoading || !selectedImage}
-          className="w-full py-3 bg-[#7cb342] text-white font-medium rounded-lg hover:bg-[#6a9e38] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          className="w-full btn btn-md btn-primary"
         >
           {generateButtonLabel}
         </button>
@@ -145,7 +146,7 @@ function NewEncounterPage({ onNavigate }) {
         {/* 偶遇档案卡片 */}
         <div
           className="rounded-2xl overflow-hidden"
-          style={{ border: '3px solid #5a4a3a', boxShadow: '4px 4px 0px #5a4a3a' }}
+          style={{ background: 'rgb(247, 243, 223)', boxShadow: '0 4px 10px rgba(107, 92, 67, 0.42)' }}
         >
           {/* 标题区 */}
           <div className="px-5 pt-5 pb-4" style={{ background: 'linear-gradient(135deg, #f5e6c8 0%, #ede0c4 100%)' }}>
@@ -200,13 +201,13 @@ function NewEncounterPage({ onNavigate }) {
           <button
             onClick={handleSave}
             disabled={!species.trim()}
-            className="flex-1 py-3 bg-[#7cb342] text-white font-medium rounded-lg hover:bg-[#6a9e38] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 btn btn-md btn-primary"
           >
             保存到日志
           </button>
           <button
             onClick={() => alert('即将上线，敬请期待！')}
-            className="flex-1 py-3 bg-white text-[#7cb342] font-medium rounded-lg border-2 border-[#7cb342] hover:bg-green-50 transition-colors"
+            className="flex-1 btn btn-md btn-default"
           >
             分享发现
           </button>

@@ -89,7 +89,7 @@ function ListPage({ onNavigate }) {
   const expandedRecord = expandedId ? records.find(r => r.id === expandedId) : null
 
   return (
-    <div className="min-h-screen bg-[#fffdf7] px-4 py-6">
+    <div className="min-h-screen px-4 py-6" style={{ background: 'var(--bg-primary)' }}>
       <link
         href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
         rel="stylesheet"
@@ -98,17 +98,17 @@ function ListPage({ onNavigate }) {
       {/* 页面标题 */}
       <h1
         className="text-center text-xl mt-4 mb-6"
-        style={{ fontFamily: "'Press Start 2P', cursive" }}
+        style={{ fontFamily: "'Press Start 2P', cursive", color: 'var(--text-primary)' }}
       >
         我的动物图鉴
       </h1>
 
       {/* Tab 占位 UI */}
       <div className="flex gap-6 justify-center mb-8">
-        <button className="pb-2 font-bold text-[#3d2b1a]" style={{ borderBottom: '3px solid #7cb342' }}>
+        <button className="pb-2 font-bold" style={{ color: 'var(--text-primary)', borderBottom: `3px solid var(--primary-color)` }}>
           时间线
         </button>
-        <button className="pb-2 text-gray-500" onClick={() => {}}>
+        <button className="pb-2" style={{ color: 'var(--text-secondary)' }} onClick={() => {}}>
           图鉴
         </button>
       </div>
@@ -126,7 +126,8 @@ function ListPage({ onNavigate }) {
           <div className="flex justify-between items-center mb-4">
             <button
               onClick={() => setExpandedId(null)}
-              className="text-2xl text-gray-700 hover:text-gray-900"
+              className="text-2xl"
+              style={{ color: 'var(--text-primary)' }}
               aria-label="返回"
             >
               ←
@@ -169,8 +170,8 @@ function ListPage({ onNavigate }) {
 
           {/* 详情卡片 */}
           <div
-            className="rounded-2xl overflow-hidden bg-white"
-            style={{ border: '3px solid #5a4a3a', boxShadow: '4px 4px 0px #5a4a3a' }}
+            className="rounded-2xl overflow-hidden"
+            style={{ background: 'rgb(247, 243, 223)', boxShadow: '0 4px 10px rgba(107, 92, 67, 0.42)' }}
           >
             {/* 大图 */}
             <img
@@ -207,8 +208,8 @@ function ListPage({ onNavigate }) {
         /* 空状态 */
         <div className="flex flex-col items-center justify-center min-h-[70vh]">
           <div className="text-6xl mb-6">🐿️</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-3">还没有偶遇记录</h2>
-          <p className="text-gray-500 text-base text-center leading-relaxed">
+          <h2 className="text-2xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>还没有偶遇记录</h2>
+          <p className="text-base text-center leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
             出门遇见小动物拍一张吧～<br />让你的城市日志热闹起来！
           </p>
         </div>
@@ -218,7 +219,7 @@ function ListPage({ onNavigate }) {
           {groupedRecords.map((group) => (
             <div key={group.seasonKey}>
               {/* 分组标题 */}
-              <h2 className="text-lg font-bold text-[#3d2b1a] mb-4">{group.label}</h2>
+              <h2 className="text-lg font-bold mb-4" style={{ color: 'var(--text-primary)' }}>{group.label}</h2>
 
               {/* Swiper 轮播 */}
               <Swiper
@@ -245,8 +246,10 @@ function ListPage({ onNavigate }) {
                     className="flex justify-center"
                   >
                     <div
-                      className="w-64 rounded-2xl overflow-hidden bg-white relative"
-                      style={{ border: '3px solid #5a4a3a', boxShadow: '4px 4px 0px #5a4a3a' }}
+                      className="w-64 rounded-2xl overflow-hidden relative transition-transform duration-300 hover:shadow-lg"
+                      style={{ background: 'rgb(247, 243, 223)', boxShadow: '0 4px 10px rgba(107, 92, 67, 0.42)' }}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-4px)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                     >
                       {/* 菜单按钮 */}
                       <div className="absolute top-3 right-3 z-10" ref={expandingMenuId === record.id ? menuRef : null}>
