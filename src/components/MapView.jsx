@@ -35,7 +35,7 @@ function formatDate(iso) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-function MapView() {
+function MapView({ onExpandRecord }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const markersRef = useRef([])
@@ -157,13 +157,22 @@ function MapView() {
                   <span className="text-2xl">{getEmojiForSpecies(selectedRecord.species)}</span>
                   <span className="font-bold text-[#3d2b1a] text-base">{selectedRecord.species}</span>
                 </div>
-                <button
-                  onClick={() => setSelectedRecord(null)}
-                  className="text-2xl text-gray-400 leading-none"
-                  aria-label="关闭"
-                >
-                  ×
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => { onExpandRecord(selectedRecord); setSelectedRecord(null) }}
+                    className="text-xs px-3 py-1 rounded-full font-medium"
+                    style={{ background: '#7cb342', color: '#fff' }}
+                  >
+                    展开详情
+                  </button>
+                  <button
+                    onClick={() => setSelectedRecord(null)}
+                    className="text-2xl text-gray-400 leading-none"
+                    aria-label="关闭"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
 
               {selectedRecord.imageBase64 && (

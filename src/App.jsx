@@ -9,6 +9,7 @@ function App() {
   const [activePage, setActivePage] = useState('timeline')
   const [authReady, setAuthReady] = useState(false)
   const [authError, setAuthError] = useState(null)
+  const [expandTargetId, setExpandTargetId] = useState(null)
 
   useEffect(() => {
     ensureSession()
@@ -33,9 +34,14 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fffdf7]">
-      {activePage === 'timeline' && <ListPage />}
-      {activePage === 'map' && <MapView />}
+    <div className="min-h-screen bg-[#fffdf7] overflow-x-hidden">
+      {activePage === 'timeline' && <ListPage initialExpandedId={expandTargetId} />}
+      {activePage === 'map' && (
+        <MapView onExpandRecord={(record) => {
+          setExpandTargetId(record.id)
+          setActivePage('timeline')
+        }} />
+      )}
       {activePage === 'new' && (
         <NewEncounterPage onNavigate={() => setActivePage('timeline')} />
       )}

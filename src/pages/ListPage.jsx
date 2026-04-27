@@ -5,10 +5,10 @@ import 'swiper/css'
 import 'swiper/css/effect-coverflow'
 import { getRecords, deleteRecord } from '../services/supabaseService'
 
-function ListPage() {
+function ListPage({ initialExpandedId = null }) {
   const [records, setRecords] = useState([])
   const [confirmingId, setConfirmingId] = useState(null)
-  const [expandedId, setExpandedId] = useState(null)
+  const [expandedId, setExpandedId] = useState(initialExpandedId)
   const [expandingMenuId, setExpandingMenuId] = useState(null)
   const [loadError, setLoadError] = useState(null)
   const menuRef = useRef(null)
