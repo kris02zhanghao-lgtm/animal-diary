@@ -23,6 +23,7 @@ function ListPage({ initialExpandedId = null }) {
   const [editingLongitude, setEditingLongitude] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
   const [detailSaveError, setDetailSaveError] = useState(null)
+  const [isEditing, setIsEditing] = useState(false)
   const menuRef = useRef(null)
 
   const expandedRecord = expandedId ? records.find(r => r.id === expandedId) : null
@@ -47,8 +48,9 @@ function ListPage({ initialExpandedId = null }) {
       setEditingLatitude(expandedRecord.latitude || null)
       setEditingLongitude(expandedRecord.longitude || null)
       setDetailSaveError(null)
+      setIsEditing(false)
     }
-  }, [expandedRecord])
+  }, [expandedId])
 
   const normalizeRecord = (r) => ({
     ...r,
@@ -167,60 +169,104 @@ function ListPage({ initialExpandedId = null }) {
       {/* 展开态详情视图 - 全屏显示，列表隐藏 */}
       {expandedRecord ? (
         <div className="mb-24 max-w-2xl mx-auto">
-          {/* 详情视图顶部：返回按钮 + 菜单 */}
+          {/* 详情视图顶部 */}
           <div className="flex justify-between items-center mb-4">
-            <button
-              onClick={() => setExpandedId(null)}
-              className="text-2xl"
-              style={{ color: 'var(--text-primary)' }}
-              aria-label="返回"
-            >
-              ←
-            </button>
-            <div className="relative" ref={menuRef}>
-              <button
-                onClick={() => setExpandingMenuId(expandingMenuId === expandedId ? null : expandedId)}
-                className="text-xl text-gray-600 hover:text-gray-800 font-bold"
-                aria-label="菜单"
-              >
-                ⋮
-              </button>
-              {expandingMenuId === expandedId && (
-                <div
-                  className="absolute right-0 top-8 z-20 rounded-xl overflow-hidden"
+            {isEditing ? (
+              <>
+                <button
+                  onClick={() => {
+                    setIsEditing(false)
+                    setEditingTitle(expandedRecord.title || '')
+                    setEditingJournal(expandedRecord.journal || '')
+                    setEditingSpecies(expandedRecord.species || '')
+                    setEditingLocation(expandedRecord.location || '')
+                    setEditingLatitude(expandedRecord.latitude || null)
+                    setEditingLongitude(expandedRecord.longitude || null)
+                    setDetailSaveError(null)
+                  }}
+                  className="text-sm px-3 py-1 rounded-full"
+                  style={{ background: '#f0e8d8', color: '#7a5c3a' }}
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleSaveDetail}
+                  disabled={!editingSpecies.trim() || isSaving}
+                  className="text-sm px-4 py-1 rounded-full font-bold"
                   style={{
-                    background: 'rgb(247, 243, 223)',
-                    boxShadow: '0 4px 10px rgba(107, 92, 67, 0.42)',
-                    minWidth: '120px'
+                    background: editingSpecies.trim() && !isSaving ? '#d4a574' : '#ccc',
+                    color: 'white',
+                    cursor: editingSpecies.trim() && !isSaving ? 'pointer' : 'not-allowed',
                   }}
                 >
+                  {isSaving ? '保存中...' : '保存'}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setExpandedId(null)}
+                  className="text-2xl"
+                  style={{ color: 'var(--text-primary)' }}
+                  aria-label="返回"
+                >
+                  ←
+                </button>
+                <div className="flex items-center gap-3">
                   <button
-                    onClick={() => {
-                      alert('即将上线，敬请期待！')
-                      setExpandingMenuId(null)
-                    }}
-                    className="block w-full text-left px-4 py-2 text-sm first:rounded-t-md"
-                    style={{ color: '#794f27' }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = '#f0e8d8'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    onClick={() => setIsEditing(true)}
+                    className="text-sm px-3 py-1 rounded-full"
+                    style={{ background: '#f0e8d8', color: '#7a5c3a' }}
                   >
-                    分享
+                    ✏️ 编辑
                   </button>
-                  <button
-                    onClick={() => {
-                      setConfirmingId(expandedRecord.id)
-                      setExpandingMenuId(null)
-                    }}
-                    className="block w-full text-left px-4 py-2 text-sm last:rounded-b-md"
-                    style={{ color: '#e05a5a' }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = '#f0e8d8'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                  >
-                    删除
-                  </button>
+                  <div className="relative" ref={menuRef}>
+                    <button
+                      onClick={() => setExpandingMenuId(expandingMenuId === expandedId ? null : expandedId)}
+                      className="text-xl text-gray-600 hover:text-gray-800 font-bold"
+                      aria-label="菜单"
+                    >
+                      ⋮
+                    </button>
+                    {expandingMenuId === expandedId && (
+                      <div
+                        className="absolute right-0 top-8 z-20 rounded-xl overflow-hidden"
+                        style={{
+                          background: 'rgb(247, 243, 223)',
+                          boxShadow: '0 4px 10px rgba(107, 92, 67, 0.42)',
+                          minWidth: '120px'
+                        }}
+                      >
+                        <button
+                          onClick={() => {
+                            alert('即将上线，敬请期待！')
+                            setExpandingMenuId(null)
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm first:rounded-t-md"
+                          style={{ color: '#794f27' }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = '#f0e8d8'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          分享
+                        </button>
+                        <button
+                          onClick={() => {
+                            setConfirmingId(expandedRecord.id)
+                            setExpandingMenuId(null)
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm last:rounded-b-md"
+                          style={{ color: '#e05a5a' }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = '#f0e8d8'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          删除
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
 
           {/* 详情卡片 */}
@@ -236,72 +282,81 @@ function ListPage({ initialExpandedId = null }) {
               style={{ background: 'rgb(247, 243, 223)' }}
             />
 
-            {/* 标题 */}
+            {/* 内容区域 */}
             <div className="p-5 space-y-4">
-              <input
-                type="text"
-                value={editingTitle}
-                onChange={(e) => setEditingTitle(e.target.value)}
-                className="w-full text-lg font-bold px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                placeholder="偶遇小标题"
-              />
+              {/* 标题 */}
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editingTitle}
+                  onChange={(e) => setEditingTitle(e.target.value)}
+                  className="w-full text-lg font-bold px-3 py-2 rounded-lg focus:outline-none"
+                  style={{ background: '#f0e8d8', border: '1px solid #c9a97a', color: '#3d2b1a' }}
+                  placeholder="偶遇小标题"
+                />
+              ) : (
+                <p className="text-lg font-bold" style={{ color: '#3d2b1a' }}>
+                  {expandedRecord.title || ''}
+                </p>
+              )}
 
-              {/* 完整日志 */}
+              {/* 日志 */}
               <div>
                 <p className="text-sm text-gray-500 mb-2">偶遇日志</p>
-                <textarea
-                  value={editingJournal}
-                  onChange={(e) => setEditingJournal(e.target.value)}
-                  className="w-full text-sm text-gray-700 px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 min-h-24 resize-none"
-                  placeholder="记录你的发现..."
-                />
+                {isEditing ? (
+                  <textarea
+                    value={editingJournal}
+                    onChange={(e) => setEditingJournal(e.target.value)}
+                    className="w-full text-sm px-3 py-2 rounded-lg focus:outline-none min-h-28 resize-none leading-relaxed"
+                    style={{ background: '#f0e8d8', border: '1px solid #c9a97a', color: '#3d2b1a' }}
+                    placeholder="记录你的发现..."
+                  />
+                ) : (
+                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                    {expandedRecord.journal}
+                  </p>
+                )}
               </div>
 
               {/* 物种、地点、日期 */}
               <div className="pt-3 border-t border-gray-200 space-y-3">
                 <div className="flex items-center gap-2">
                   <span>🐾</span>
-                  <input
-                    type="text"
-                    value={editingSpecies}
-                    onChange={(e) => setEditingSpecies(e.target.value)}
-                    className="flex-1 font-bold px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                    placeholder="动物种类"
-                  />
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editingSpecies}
+                      onChange={(e) => setEditingSpecies(e.target.value)}
+                      className="flex-1 font-bold px-3 py-1.5 rounded-lg focus:outline-none"
+                      style={{ background: '#f0e8d8', border: '1px solid #c9a97a', color: '#3d2b1a' }}
+                      placeholder="动物种类"
+                    />
+                  ) : (
+                    <span className="font-bold text-gray-800">{expandedRecord.species}</span>
+                  )}
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 flex-1">
                     <span>📍</span>
-                    <span className="text-gray-600 text-sm">{editingLocation || '暂无地点'}</span>
+                    <span className="text-gray-600 text-sm">
+                      {isEditing ? (editingLocation || '暂无地点') : (expandedRecord.location || '暂无地点')}
+                    </span>
                   </div>
-                  <button
-                    onClick={() => { setShowLocationPicker(true); setLocationSaveError(null) }}
-                    className="text-xs px-2 py-1 rounded-full ml-2"
-                    style={{ background: '#f0e8d8', color: '#7a5c3a' }}
-                  >
-                    {isSavingLocation ? '修改中...' : '修改'}
-                  </button>
+                  {isEditing && (
+                    <button
+                      onClick={() => setShowLocationPicker(true)}
+                      className="text-xs px-2 py-1 rounded-full ml-2"
+                      style={{ background: '#e8d8c0', color: '#7a5c3a' }}
+                    >
+                      修改
+                    </button>
+                  )}
                 </div>
                 <div className="text-xs text-gray-400">{formatDate(expandedRecord.createdAt)}</div>
 
-                {/* 保存错误提示 */}
                 {detailSaveError && (
                   <p className="text-xs text-red-500">{detailSaveError}</p>
                 )}
-
-                {/* 保存按钮 */}
-                <button
-                  onClick={handleSaveDetail}
-                  disabled={!editingSpecies.trim() || isSaving}
-                  className="w-full py-2 rounded-xl font-bold text-white transition-opacity"
-                  style={{
-                    background: editingSpecies.trim() && !isSaving ? '#d4a574' : '#ccc',
-                    cursor: editingSpecies.trim() && !isSaving ? 'pointer' : 'not-allowed',
-                    opacity: editingSpecies.trim() && !isSaving ? 1 : 0.6,
-                  }}
-                >
-                  {isSaving ? '保存中...' : '保存修改'}
-                </button>
               </div>
             </div>
           </div>
