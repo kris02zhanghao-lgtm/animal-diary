@@ -132,11 +132,17 @@ export default async function handler(req, res) {
           messages: [
             {
               role: 'user',
-              content: `根据这个动物物种名，判断它属于以下哪个大类？
-物种名：${result.species}
-大类选项：猫、狗、鸟、松鼠、兔子、其他
+              content: `物种：${result.species}
 
-只返回大类名称，不要有其他文字。`,
+以下哪个是这个物种所属的大类？
+- 猫
+- 狗
+- 鸟
+- 松鼠
+- 兔子
+- 其他
+
+回复ONLY大类名，不要有其他词语。例如回复：猫`,
             },
           ],
         }),
@@ -145,8 +151,13 @@ export default async function handler(req, res) {
       if (categoryResponse.ok) {
         const categoryData = await categoryResponse.json()
         const categoryContent = categoryData.choices?.[0]?.message?.content?.trim()
-        if (categoryContent && ['猫', '狗', '鸟', '松鼠', '兔子', '其他'].includes(categoryContent)) {
-          category = categoryContent
+        if (categoryContent) {
+          // 灵活匹配：检查返回值中是否包含关键词
+          if (categoryContent.includes('猫')) category = '猫'
+          else if (categoryContent.includes('狗')) category = '狗'
+          else if (categoryContent.includes('鸟')) category = '鸟'
+          else if (categoryContent.includes('松鼠')) category = '松鼠'
+          else if (categoryContent.includes('兔子')) category = '兔子'
         }
       }
     } catch (err) {
