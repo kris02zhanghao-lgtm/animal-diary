@@ -56,6 +56,27 @@ export async function saveRecord(record) {
   }
 }
 
+export async function updateRecord(id, fields) {
+  try {
+    const headers = await authHeaders()
+    const response = await fetch('/api/update-record', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify({ id, ...fields }),
+    })
+
+    handleAuthError(response)
+    const result = await response.json()
+
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || '更新失败，请重试')
+    }
+  } catch (err) {
+    console.error('Error updating record:', err)
+    throw err
+  }
+}
+
 export async function deleteRecord(id) {
   try {
     const headers = await authHeaders()

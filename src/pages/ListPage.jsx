@@ -3,7 +3,8 @@ import { Swiper, SwiperSlide } from 'swiper/react'
 import { EffectCoverflow } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/effect-coverflow'
-import { getRecords, deleteRecord } from '../services/supabaseService'
+import { getRecords, deleteRecord, updateRecord } from '../services/supabaseService'
+import LocationPicker from '../components/LocationPicker'
 
 function ListPage({ initialExpandedId = null }) {
   const [records, setRecords] = useState([])
@@ -11,6 +12,9 @@ function ListPage({ initialExpandedId = null }) {
   const [expandedId, setExpandedId] = useState(initialExpandedId)
   const [expandingMenuId, setExpandingMenuId] = useState(null)
   const [loadError, setLoadError] = useState(null)
+  const [showLocationPicker, setShowLocationPicker] = useState(false)
+  const [isSavingLocation, setIsSavingLocation] = useState(false)
+  const [locationSaveError, setLocationSaveError] = useState(null)
   const menuRef = useRef(null)
 
   useEffect(() => {
@@ -58,6 +62,23 @@ function ListPage({ initialExpandedId = null }) {
       .map(([seasonKey, group]) => ({ seasonKey, ...group }))
       .sort((a, b) => b.seasonKey.localeCompare(a.seasonKey))
   }, [records])
+
+  const handleLocationConfirm = async ({ location, latitude, longitude }) => {
+    if (!expandedRecord) return
+    setIsSavingLocation(true)
+    setLocationSaveError(null)
+    try {
+      await updateRecord(expandedRecord.id, { location, latitude, longitude })
+      const updated = await getRecords()
+      const normalized = updated.map(normalizeRecord)
+      setRecords(normalized)
+      setShowLocationPicker(false)
+    } catch {
+      setLocationSaveError('保存失败，请重试')
+    } finally {
+      setIsSavingLocation(false)
+    }
+  }
 
   const handleDelete = async () => {
     await deleteRecord(confirmingId)
@@ -196,10 +217,22 @@ function ListPage({ initialExpandedId = null }) {
                   <span>🐾</span>
                   <span className="font-bold text-gray-800">{expandedRecord.species}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span>📍</span>
-                  <span className="text-gray-600">{expandedRecord.location}</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span>📍</span>
+                    <span className="text-gray-600">{expandedRecord.location || '暂无地点'}</span>
+                  </div>
+                  <button
+                    onClick={() => { setShowLocationPicker(true); setLocationSaveError(null) }}
+                    className="text-xs px-2 py-1 rounded-full"
+                    style={{ background: '#f0e8d8', color: '#7a5c3a' }}
+                  >
+                    {isSavingLocation ? '保存中...' : '修改定位'}
+                  </button>
                 </div>
+                {locationSaveError && (
+                  <p className="text-xs text-red-500">{locationSaveError}</p>
+                )}
                 <div className="text-xs text-gray-400">{formatDate(expandedRecord.createdAt)}</div>
               </div>
             </div>
@@ -385,6 +418,14 @@ function ListPage({ initialExpandedId = null }) {
 
       {/* 匿名模式提示 */}
       <p className="text-center text-xs text-gray-400 py-4">匿名模式，记录与本设备绑定</p>
+
+      {/* 修改定位面板 */}
+      {showLocationPicker && (
+        <LocationPicker
+          onConfirm={handleLocationConfirm}
+          onClose={() => setShowLocationPicker(false)}
+        />
+      )}
     </div>
   )
 }
