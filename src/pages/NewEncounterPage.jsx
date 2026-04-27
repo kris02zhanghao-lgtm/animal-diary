@@ -191,6 +191,13 @@ function NewEncounterPage({ onNavigate }) {
           {generateButtonLabel}
         </button>
 
+        {/* AI 识别错误提示 */}
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+
         {/* 偶遇档案卡片 */}
         <div
           className="rounded-2xl overflow-hidden"
@@ -281,13 +288,6 @@ function NewEncounterPage({ onNavigate }) {
             分享发现
           </button>
         </div>
-
-        {/* 错误提示 */}
-        {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
 
         {/* 保存失败提示 */}
         {saveError && (

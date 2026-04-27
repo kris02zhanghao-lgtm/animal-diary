@@ -22,9 +22,13 @@ export default async function handler(req, res) {
 
   const locationText = location || '城市某处'
 
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 25000)
+
   try {
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
+      signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
@@ -75,6 +79,7 @@ export default async function handler(req, res) {
         ],
       }),
     })
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
@@ -121,6 +126,10 @@ export default async function handler(req, res) {
       journal: result.journal,
     })
   } catch (error) {
+    clearTimeout(timeoutId)
+    if (error.name === 'AbortError') {
+      return res.status(504).json({ success: false, error: '识别超时（25秒），请重试' })
+    }
     return res.status(500).json({
       success: false,
       error: error.message || '识别失败，请检查网络连接后重试',
