@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: 'Method not allowed' })
   }
 
-  const { image_base64, location, title, species, journal, latitude, longitude } = req.body || {}
+  const { image_base64, location, title, species, category, journal, latitude, longitude } = req.body || {}
 
   if (!image_base64 || !species || !journal) {
     return res.status(400).json({ success: false, error: '缺少必要字段，无法保存记录' })
@@ -38,6 +38,7 @@ export default async function handler(req, res) {
           location: location || '城市某处',
           title: title || species,
           species,
+          category: category || '其他',
           journal,
           latitude: latitude ?? null,
           longitude: longitude ?? null,

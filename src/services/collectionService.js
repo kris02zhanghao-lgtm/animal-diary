@@ -5,32 +5,28 @@ export function getSpeciesStats(records) {
 
   const totalCount = records.length
 
-  const speciesMap = {}
+  const categoryMap = {}
   records.forEach((record) => {
-    const species = record.species?.trim()
-    if (!species) return
-
-    if (!speciesMap[species]) {
-      speciesMap[species] = {
-        species,
+    const category = record.category?.trim() || '其他'
+    if (!categoryMap[category]) {
+      categoryMap[category] = {
+        category,
         records: [],
       }
     }
-    speciesMap[species].records.push(record)
+    categoryMap[category].records.push(record)
   })
 
-  const stats = Object.values(speciesMap).map((item) => {
+  const stats = Object.values(categoryMap).map((item) => {
     const count = item.records.length
-    const percentage = Math.round((count / totalCount) * 100)
     const sortedByDate = item.records.sort(
       (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
     )
     const latestRecord = sortedByDate[0]
 
     return {
-      species: item.species,
+      category: item.category,
       count,
-      percentage,
       latestRecord,
       latestPhoto: latestRecord.imageBase64,
       mostRecentLocation: latestRecord.location || '暂无地点',

@@ -51,8 +51,8 @@ function CollectionPage() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   }
 
-  const selectedSpeciesData = speciesStats.find(s => s.species === selectedSpecies)
-  const selectedRecords = selectedSpeciesData?.allRecords || []
+  const selectedCategoryData = speciesStats.find(s => s.category === selectedSpecies)
+  const selectedRecords = selectedCategoryData?.allRecords || []
 
   return (
     <div className="min-h-screen px-4 py-6 pb-24" style={{ background: 'var(--bg-primary)' }}>
@@ -76,7 +76,7 @@ function CollectionPage() {
             </button>
             <div>
               <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                {selectedSpecies}（遇到{selectedSpeciesData.count}次）
+                {selectedSpecies}（遇到{selectedCategoryData.count}次）
               </h2>
             </div>
           </div>
@@ -137,8 +137,8 @@ function CollectionPage() {
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 {speciesStats.map((stat) => (
                   <div
-                    key={stat.species}
-                    onClick={() => setSelectedSpecies(stat.species)}
+                    key={stat.category}
+                    onClick={() => setSelectedSpecies(stat.category)}
                     className="rounded-2xl overflow-hidden cursor-pointer transition-transform hover:scale-105"
                     style={{
                       background: 'rgb(247, 243, 223)',
@@ -147,13 +147,13 @@ function CollectionPage() {
                   >
                     <img
                       src={stat.latestPhoto}
-                      alt={stat.species}
+                      alt={stat.category}
                       className="w-full h-48 object-cover"
                     />
                     <div className="p-3 space-y-2">
-                      <h3 className="font-bold text-gray-800">{stat.species}</h3>
+                      <h3 className="font-bold text-gray-800">{stat.category}</h3>
                       <p className="text-sm text-gray-600">
-                        遇到{stat.count}次 ({stat.percentage}%)
+                        遇到{stat.count}次
                       </p>
                       <p className="text-xs text-gray-500">{stat.mostRecentLocation}</p>
                     </div>

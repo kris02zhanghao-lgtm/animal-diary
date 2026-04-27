@@ -46,7 +46,7 @@ export default async function handler(req, res) {
                 text: `你是一个城市动物观察站，正在为用户生成偶遇档案。
 
 任务：
-1. 识别图片中的动物物种，使用标准中文俗名（如"橘猫"、"三花猫"、"奶牛猫"、"柯基"、"喜鹊"）。规则：只写物种通用名，不加颜色或花纹修饰词（统一用"橘猫"，不用"橘白猫""橘黄猫"；统一用"奶牛猫"，不用"黑白猫"）；同一物种始终用同一个名称
+1. 识别图片中的动物物种（中文名，生活化称呼，如"奶牛猫"、"橘猫"、"三花猫"、"柯基"、"喜鹊"）
 2. 生成一个10字以内的偶遇小标题，语气简练有趣，像一篇微型档案的标题，例如"领地巡查官驾到"、"橘猫的午后判决"
 3. 以「你」为主语，写一段50-60字的中文偶遇日志，记录「你」今天和这只动物之间发生了什么。动物是主导者，你只是它今天遭遇的环境的一部分，地位对等或略低于它。
 
@@ -116,6 +116,44 @@ export default async function handler(req, res) {
       })
     }
 
+    // 分类：根据 species 判断大类
+    let category = '其他'
+    try {
+      const categoryResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+          'HTTP-Referer': 'https://animal-diary.vercel.app',
+          'X-Title': 'Animal Diary',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash-lite',
+          messages: [
+            {
+              role: 'user',
+              content: `根据这个动物物种名，判断它属于以下哪个大类？
+物种名：${result.species}
+大类选项：猫、狗、鸟、松鼠、兔子、其他
+
+只返回大类名称，不要有其他文字。`,
+            },
+          ],
+        }),
+      })
+
+      if (categoryResponse.ok) {
+        const categoryData = await categoryResponse.json()
+        const categoryContent = categoryData.choices?.[0]?.message?.content?.trim()
+        if (categoryContent && ['猫', '狗', '鸟', '松鼠', '兔子', '其他'].includes(categoryContent)) {
+          category = categoryContent
+        }
+      }
+    } catch (err) {
+      console.log('[recognize] category classification failed:', err.message)
+      // fallback to default '其他'
+    }
+
     const rawTitle = result.title || result.species
     const title = rawTitle.length > 15 ? rawTitle.slice(0, 15) : rawTitle
 
@@ -123,6 +161,7 @@ export default async function handler(req, res) {
       success: true,
       title,
       species: result.species,
+      category,
       journal: result.journal,
     })
   } catch (error) {
