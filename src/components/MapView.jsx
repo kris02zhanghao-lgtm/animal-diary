@@ -103,6 +103,7 @@ function MapView() {
         offset: new window.AMap.Pixel(-22, -22),
       })
       marker.on('click', () => setSelectedRecord(record))
+      marker.on('touchend', () => setSelectedRecord(record))
       marker.setMap(mapRef.current)
       markersRef.current.push(marker)
     })

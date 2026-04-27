@@ -41,7 +41,7 @@ function BottomTabBar({ active, onChange }) {
         </div>
       )}
       <div
-        className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around"
+        className="fixed bottom-0 left-0 right-0 z-[100] flex items-center justify-around"
         style={{
           height: '64px',
           background: 'rgb(247, 243, 223)',
