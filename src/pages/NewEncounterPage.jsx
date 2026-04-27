@@ -29,6 +29,7 @@ function NewEncounterPage({ onNavigate }) {
   const [isLoading, setIsLoading] = useState(false)
   const [title, setTitle] = useState('')
   const [species, setSpecies] = useState('')
+  const [category, setCategory] = useState('')
   const [journal, setJournal] = useState('')
   const [recognizedAt, setRecognizedAt] = useState(null)
   const [error, setError] = useState(null)
@@ -84,6 +85,7 @@ function NewEncounterPage({ onNavigate }) {
       if (result.success) {
         setTitle(result.title)
         setSpecies(result.species)
+        setCategory(result.category || '其他')
         setJournal(result.journal)
         setRecognizedAt(new Date())
       } else {
@@ -110,6 +112,7 @@ function NewEncounterPage({ onNavigate }) {
         location: location || '城市某处',
         title,
         species,
+        category,
         journal,
         latitude: coordinates?.lat ?? null,
         longitude: coordinates?.lng ?? null,
