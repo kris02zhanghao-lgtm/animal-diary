@@ -1,8 +1,11 @@
 ## 关键决策
 
-### 决策1：长按 500ms 进入选择模式
+### 决策1：移动端长按 500ms，PC 端右键进入选择模式
 
-移动端通过 `onTouchStart` 启动 500ms 定时器，`onTouchEnd`/`onTouchMove` 清除定时器；桌面端通过 `onMouseDown` 同样启动定时器，`onMouseUp`/`onMouseLeave` 清除。500ms 是系统长按惯例，不会和普通点击冲突。
+- **移动端**：通过 `onTouchStart` 启动 500ms 定时器，`onTouchEnd`/`onTouchMove` 清除定时器
+- **PC 端**：通过 `onContextMenu`（右键）直接进入选择模式，更符合桌面端习惯
+
+500ms 长按是系统惯例，不会和普通点击冲突；右键是桌面端的标准选择操作。
 
 ### 决策2：保留单条删除确认弹窗，改为多选后的批量确认
 

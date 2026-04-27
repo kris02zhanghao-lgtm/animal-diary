@@ -1,13 +1,81 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { getRecords, deleteRecord } from '../services/supabaseService'
 import { getSpeciesStats } from '../services/collectionService'
 
-function CollectionPage() {
+function PhotoCard({ record, isSelected, isSelectMode, onLongPress, onToggleSelect, onExpand, formatDate }) {
+  const longPressTimer = useRef(null)
+  const isLongPressed = useRef(false)
+
+  const startLongPress = () => {
+    isLongPressed.current = false
+    longPressTimer.current = setTimeout(() => {
+      isLongPressed.current = true
+      onLongPress(record.id)
+    }, 500)
+  }
+
+  const cancelLongPress = () => {
+    clearTimeout(longPressTimer.current)
+  }
+
+  const handleContextMenu = (e) => {
+    e.preventDefault()
+    isLongPressed.current = true
+    onLongPress(record.id)
+  }
+
+  const handleClick = () => {
+    if (isLongPressed.current) {
+      isLongPressed.current = false
+      return
+    }
+    if (isSelectMode) {
+      onToggleSelect(record.id)
+    } else {
+      onExpand?.(record.id)
+    }
+  }
+
+  return (
+    <div
+      className="rounded-xl overflow-hidden relative group cursor-pointer"
+      style={{ background: 'rgb(247, 243, 223)', boxShadow: '0 4px 10px rgba(107, 92, 67, 0.42)' }}
+      onMouseDown={startLongPress}
+      onMouseUp={cancelLongPress}
+      onMouseLeave={cancelLongPress}
+      onContextMenu={handleContextMenu}
+      onTouchStart={startLongPress}
+      onTouchEnd={cancelLongPress}
+      onTouchMove={cancelLongPress}
+      onClick={handleClick}
+    >
+      <img
+        src={record.imageBase64}
+        alt={record.species}
+        className="w-full h-40 object-cover"
+      />
+      {isSelectMode && (
+        <div className="absolute top-2 left-2 w-6 h-6 rounded-full flex items-center justify-center"
+          style={{ background: isSelected ? '#7cb342' : '#ccc' }}>
+          {isSelected && <span style={{ color: 'white', fontSize: '12px' }}>✓</span>}
+        </div>
+      )}
+      <div className="p-2 space-y-1">
+        <p className="text-sm font-bold text-gray-800">{record.species}</p>
+        <p className="text-xs text-gray-500">{formatDate(record.createdAt)}</p>
+      </div>
+    </div>
+  )
+}
+
+function CollectionPage({ onExpandRecord }) {
   const [records, setRecords] = useState([])
   const [speciesStats, setSpeciesStats] = useState([])
   const [selectedSpecies, setSelectedSpecies] = useState(null)
   const [loadError, setLoadError] = useState(null)
-  const [confirmingId, setConfirmingId] = useState(null)
+  const [isSelectMode, setIsSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [confirmingBatch, setConfirmingBatch] = useState(false)
 
   useEffect(() => {
     fetchAndAggregateRecords()
@@ -34,14 +102,34 @@ function CollectionPage() {
     createdAt: r.created_at ?? r.createdAt,
   })
 
-  const handleDelete = async () => {
-    await deleteRecord(confirmingId)
+  const handleLongPress = (recordId) => {
+    setIsSelectMode(true)
+    const newSelected = new Set([recordId])
+    setSelectedIds(newSelected)
+  }
+
+  const toggleSelect = (recordId) => {
+    const newSelected = new Set(selectedIds)
+    if (newSelected.has(recordId)) {
+      newSelected.delete(recordId)
+    } else {
+      newSelected.add(recordId)
+    }
+    setSelectedIds(newSelected)
+  }
+
+  const handleBatchDelete = async () => {
+    for (const id of selectedIds) {
+      await deleteRecord(id)
+    }
     const updated = await getRecords()
     setRecords(updated.map(normalizeRecord))
-    setConfirmingId(null)
+    setIsSelectMode(false)
+    setSelectedIds(new Set())
+    setConfirmingBatch(false)
 
-    const selectedSpeciesData = speciesStats.find(s => s.species === selectedSpecies)
-    if (selectedSpeciesData && selectedSpeciesData.count === 1) {
+    const selectedCategoryData = speciesStats.find(s => s.category === selectedSpecies)
+    if (selectedCategoryData && selectedCategoryData.count <= selectedIds.size) {
       setSelectedSpecies(null)
     }
   }
@@ -66,52 +154,62 @@ function CollectionPage() {
         // 第二层：物种照片网格
         <div>
           <div className="flex items-center gap-3 mb-6">
-            <button
-              onClick={() => setSelectedSpecies(null)}
-              className="text-2xl"
-              style={{ color: 'var(--text-primary)' }}
-              aria-label="返回"
-            >
-              ←
-            </button>
-            <div>
-              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
-                {selectedSpecies}（遇到{selectedCategoryData.count}次）
-              </h2>
-            </div>
+            {isSelectMode ? (
+              <>
+                <div className="flex-1">
+                  <p className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
+                    已选{selectedIds.size}张
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsSelectMode(false)
+                    setSelectedIds(new Set())
+                  }}
+                  className="px-3 py-2 rounded-lg text-sm"
+                  style={{ color: '#5a4a3a', border: '1px solid #5a4a3a' }}
+                >
+                  取消
+                </button>
+                <button
+                  onClick={() => setConfirmingBatch(true)}
+                  className="px-3 py-2 rounded-lg text-sm font-bold text-white"
+                  style={{ background: '#c0392b', border: '1px solid #c0392b' }}
+                >
+                  删除
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setSelectedSpecies(null)}
+                  className="text-2xl"
+                  style={{ color: 'var(--text-primary)' }}
+                  aria-label="返回"
+                >
+                  ←
+                </button>
+                <div>
+                  <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                    {selectedSpecies}（遇到{selectedCategoryData.count}次）
+                  </h2>
+                </div>
+              </>
+            )}
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
             {selectedRecords.map((record) => (
-              <div
+              <PhotoCard
                 key={record.id}
-                className="rounded-xl overflow-hidden relative group cursor-pointer"
-                style={{ background: 'rgb(247, 243, 223)', boxShadow: '0 4px 10px rgba(107, 92, 67, 0.42)' }}
-                onClick={() => {
-                  // 点击照片查看详情（通过 CollectionPage 展开或导航）
-                }}
-              >
-                <img
-                  src={record.imageBase64}
-                  alt={record.species}
-                  className="w-full h-40 object-cover"
-                />
-                <div className="p-2 space-y-1">
-                  <p className="text-sm font-bold text-gray-800">{record.species}</p>
-                  <p className="text-xs text-gray-500">{formatDate(record.createdAt)}</p>
-                </div>
-
-                {/* 删除按钮 - hover 显示 */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setConfirmingId(record.id)
-                  }}
-                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  ×
-                </button>
-              </div>
+                record={record}
+                isSelected={selectedIds.has(record.id)}
+                isSelectMode={isSelectMode}
+                onLongPress={handleLongPress}
+                onToggleSelect={toggleSelect}
+                onExpand={onExpandRecord}
+                formatDate={formatDate}
+              />
             ))}
           </div>
         </div>
@@ -165,12 +263,12 @@ function CollectionPage() {
         </div>
       )}
 
-      {/* 删除确认弹窗 */}
-      {confirmingId && (
+      {/* 批量删除确认弹窗 */}
+      {confirmingBatch && (
         <div
           className="fixed inset-0 z-50 flex items-end"
           style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
-          onClick={() => setConfirmingId(null)}
+          onClick={() => setConfirmingBatch(false)}
         >
           <div
             className="w-full bg-[#fffdf7] rounded-t-2xl px-6 pt-6 pb-10"
@@ -178,18 +276,18 @@ function CollectionPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-3xl text-center mb-3">🐾</div>
-            <p className="text-center font-bold text-gray-800 text-base mb-1">确认删除这条偶遇记录？</p>
-            <p className="text-center text-gray-500 text-sm mb-6">它会永远离开你的图鉴...</p>
+            <p className="text-center font-bold text-gray-800 text-base mb-1">确认删除这{selectedIds.size}条偶遇记录？</p>
+            <p className="text-center text-gray-500 text-sm mb-6">它们会永远离开你的图鉴...</p>
             <div className="flex gap-3">
               <button
-                onClick={() => setConfirmingId(null)}
+                onClick={() => setConfirmingBatch(false)}
                 className="flex-1 py-3 rounded-xl font-bold text-[#5a4a3a]"
                 style={{ border: '3px solid #5a4a3a', boxShadow: '3px 3px 0px #5a4a3a', backgroundColor: '#fff8ee' }}
               >
                 再想想
               </button>
               <button
-                onClick={handleDelete}
+                onClick={handleBatchDelete}
                 className="flex-1 py-3 rounded-xl font-bold text-white"
                 style={{ border: '3px solid #7a1a1a', boxShadow: '3px 3px 0px #7a1a1a', backgroundColor: '#c0392b' }}
               >

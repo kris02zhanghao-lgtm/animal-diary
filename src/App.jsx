@@ -43,7 +43,12 @@ function App() {
           setActivePage('timeline')
         }} />
       )}
-      {activePage === 'collection' && <CollectionPage />}
+      {activePage === 'collection' && (
+        <CollectionPage onExpandRecord={(recordId) => {
+          setExpandTargetId(recordId)
+          setActivePage('timeline')
+        }} />
+      )}
       {activePage === 'new' && (
         <NewEncounterPage onNavigate={() => setActivePage('timeline')} />
       )}
