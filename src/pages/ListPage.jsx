@@ -15,6 +15,14 @@ function ListPage({ initialExpandedId = null }) {
   const [showLocationPicker, setShowLocationPicker] = useState(false)
   const [isSavingLocation, setIsSavingLocation] = useState(false)
   const [locationSaveError, setLocationSaveError] = useState(null)
+  const [editingTitle, setEditingTitle] = useState('')
+  const [editingJournal, setEditingJournal] = useState('')
+  const [editingSpecies, setEditingSpecies] = useState('')
+  const [editingLocation, setEditingLocation] = useState('')
+  const [editingLatitude, setEditingLatitude] = useState(null)
+  const [editingLongitude, setEditingLongitude] = useState(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [detailSaveError, setDetailSaveError] = useState(null)
   const menuRef = useRef(null)
 
   useEffect(() => {
@@ -27,6 +35,18 @@ function ListPage({ initialExpandedId = null }) {
         setLoadError('加载记录失败，请刷新重试')
       })
   }, [])
+
+  useEffect(() => {
+    if (expandedRecord) {
+      setEditingTitle(expandedRecord.title || '')
+      setEditingJournal(expandedRecord.journal || '')
+      setEditingSpecies(expandedRecord.species || '')
+      setEditingLocation(expandedRecord.location || '')
+      setEditingLatitude(expandedRecord.latitude || null)
+      setEditingLongitude(expandedRecord.longitude || null)
+      setDetailSaveError(null)
+    }
+  }, [expandedRecord])
 
   const normalizeRecord = (r) => ({
     ...r,
@@ -65,18 +85,32 @@ function ListPage({ initialExpandedId = null }) {
 
   const handleLocationConfirm = async ({ location, latitude, longitude }) => {
     if (!expandedRecord) return
-    setIsSavingLocation(true)
-    setLocationSaveError(null)
+    setEditingLocation(location)
+    setEditingLatitude(latitude)
+    setEditingLongitude(longitude)
+    setShowLocationPicker(false)
+  }
+
+  const handleSaveDetail = async () => {
+    if (!expandedRecord || !editingSpecies.trim()) return
+    setIsSaving(true)
+    setDetailSaveError(null)
     try {
-      await updateRecord(expandedRecord.id, { location, latitude, longitude })
+      await updateRecord(expandedRecord.id, {
+        title: editingTitle,
+        species: editingSpecies,
+        journal: editingJournal,
+        location: editingLocation,
+        latitude: editingLatitude,
+        longitude: editingLongitude,
+      })
       const updated = await getRecords()
       const normalized = updated.map(normalizeRecord)
       setRecords(normalized)
-      setShowLocationPicker(false)
     } catch {
-      setLocationSaveError('保存失败，请重试')
+      setDetailSaveError('保存失败，请重试')
     } finally {
-      setIsSavingLocation(false)
+      setIsSaving(false)
     }
   }
 
@@ -202,38 +236,72 @@ function ListPage({ initialExpandedId = null }) {
               style={{ background: 'rgb(247, 243, 223)' }}
             />
 
-            {/* 完整日志 */}
+            {/* 标题 */}
             <div className="p-5 space-y-4">
+              <input
+                type="text"
+                value={editingTitle}
+                onChange={(e) => setEditingTitle(e.target.value)}
+                className="w-full text-lg font-bold px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                placeholder="偶遇小标题"
+              />
+
+              {/* 完整日志 */}
               <div>
                 <p className="text-sm text-gray-500 mb-2">偶遇日志</p>
-                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                  {expandedRecord.journal}
-                </p>
+                <textarea
+                  value={editingJournal}
+                  onChange={(e) => setEditingJournal(e.target.value)}
+                  className="w-full text-sm text-gray-700 px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 min-h-24 resize-none"
+                  placeholder="记录你的发现..."
+                />
               </div>
 
               {/* 物种、地点、日期 */}
-              <div className="pt-3 border-t border-gray-200 space-y-2">
+              <div className="pt-3 border-t border-gray-200 space-y-3">
                 <div className="flex items-center gap-2">
                   <span>🐾</span>
-                  <span className="font-bold text-gray-800">{expandedRecord.species}</span>
+                  <input
+                    type="text"
+                    value={editingSpecies}
+                    onChange={(e) => setEditingSpecies(e.target.value)}
+                    className="flex-1 font-bold px-2 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                    placeholder="动物种类"
+                  />
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-1">
                     <span>📍</span>
-                    <span className="text-gray-600">{expandedRecord.location || '暂无地点'}</span>
+                    <span className="text-gray-600 text-sm">{editingLocation || '暂无地点'}</span>
                   </div>
                   <button
                     onClick={() => { setShowLocationPicker(true); setLocationSaveError(null) }}
-                    className="text-xs px-2 py-1 rounded-full"
+                    className="text-xs px-2 py-1 rounded-full ml-2"
                     style={{ background: '#f0e8d8', color: '#7a5c3a' }}
                   >
-                    {isSavingLocation ? '保存中...' : '修改定位'}
+                    {isSavingLocation ? '修改中...' : '修改'}
                   </button>
                 </div>
-                {locationSaveError && (
-                  <p className="text-xs text-red-500">{locationSaveError}</p>
-                )}
                 <div className="text-xs text-gray-400">{formatDate(expandedRecord.createdAt)}</div>
+
+                {/* 保存错误提示 */}
+                {detailSaveError && (
+                  <p className="text-xs text-red-500">{detailSaveError}</p>
+                )}
+
+                {/* 保存按钮 */}
+                <button
+                  onClick={handleSaveDetail}
+                  disabled={!editingSpecies.trim() || isSaving}
+                  className="w-full py-2 rounded-xl font-bold text-white transition-opacity"
+                  style={{
+                    background: editingSpecies.trim() && !isSaving ? '#d4a574' : '#ccc',
+                    cursor: editingSpecies.trim() && !isSaving ? 'pointer' : 'not-allowed',
+                    opacity: editingSpecies.trim() && !isSaving ? 1 : 0.6,
+                  }}
+                >
+                  {isSaving ? '保存中...' : '保存修改'}
+                </button>
               </div>
             </div>
           </div>
