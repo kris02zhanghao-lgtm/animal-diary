@@ -110,7 +110,7 @@ function ListPage({ initialExpandedId = null }) {
       )}
 
       {/* 展开态详情视图 - 全屏显示，列表隐藏 */}
-      {expandedId !== null ? (
+      {expandedRecord ? (
         <div className="mb-24 max-w-2xl mx-auto">
           {/* 详情视图顶部：返回按钮 + 菜单 */}
           <div className="flex justify-between items-center mb-4">
