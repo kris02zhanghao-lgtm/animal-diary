@@ -111,6 +111,7 @@ function ListPage({ initialExpandedId = null }) {
       const updated = await getRecords()
       const normalized = updated.map(normalizeRecord)
       setRecords(normalized)
+      setIsEditing(false)
     } catch {
       setDetailSaveError('保存失败，请重试')
     } finally {
