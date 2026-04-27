@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { ensureSession } from './services/authService'
 import ListPage from './pages/ListPage'
 import NewEncounterPage from './pages/NewEncounterPage'
+import CollectionPage from './pages/CollectionPage'
 import MapView from './components/MapView'
 import BottomTabBar from './components/BottomTabBar'
 
@@ -42,6 +43,7 @@ function App() {
           setActivePage('timeline')
         }} />
       )}
+      {activePage === 'collection' && <CollectionPage />}
       {activePage === 'new' && (
         <NewEncounterPage onNavigate={() => setActivePage('timeline')} />
       )}
