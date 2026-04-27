@@ -1,18 +1,17 @@
 # 项目进度
 
 ## 当前状态
-🚧 **v0.4「偶遇地图 + 自动定位」测试中，待修复已知问题**
+✅ **v0.4「偶遇地图 + 自动定位」已完成验收（2026-04-27）**
 
-**2026-04-24 核心功能全部实现并部署**：
-- ✅ 第 1-7 组全部完成并推送 Vercel
-- ✅ 地图蓝点显示当前位置，定位成功后自动居中
-- ✅ 图片上传前压缩到 800px，减小文件体积
-- ✅ AI 识别请求加 30 秒超时保护
-- ✅ 定位失败区分「权限拒绝」和「定位不可用」两种提示
-
-**待修复问题（下次继续）**：
-- 🐛 手机端 AI 识别卡住不报错：错误提示在页面底部被遮挡，用户看不到；同时 recognize.js 内对 OpenRouter 的请求无超时，Vercel 函数可能服务端挂起
-- 具体修复方向：① 错误提示移到 AI 按钮下方或改为顶部 toast；② recognize.js 对 OpenRouter fetch 加超时限制（如 25 秒）
+**v0.4 全部功能：**
+- ✅ 底部导航栏（时间线 / 地图 / ➕ / 图鉴）
+- ✅ 高德地图页：emoji marker 渲染、fitView 自动适配、点击弹详情卡
+- ✅ 地图详情卡新增「展开详情」按钮，可直接跳到时间线详情页
+- ✅ 自动定位 + 坐标存储，地图蓝点显示当前位置
+- ✅ 图片上传前压缩至 800px
+- ✅ 后端 AI 识别加 25s 超时，前端 AI 错误提示移至按钮下方
+- ✅ BottomTabBar z-index 修复（Swiper coverflow 遮挡问题）
+- ✅ 地图 marker 补 touchend 事件（手机端可点击）
 
 ## 已完成
 
@@ -132,7 +131,7 @@
 - 能力子目录从 `temporary-public-record-write` 重命名为 `backend-record-proxy`，spec delta 重写为：前端禁止直连 Supabase，保存/读取/删除统一走后端代理
 - 变更目录 slug 保留 `allow-records-write-temporarily` 不改名，以保留 git 历史引用
 
-## 已完成（本轮新增）
+## 已完成（v0.4 本轮新增）
 
 ### UI 设计规范文档 ✓ 已创建
 - 新增 `design.md`，系统整理参考 Animal Island UI 的完整设计规范
@@ -150,8 +149,14 @@
 - ListPage 底部加"匿名模式，记录与本设备绑定"小字提示
 
 ## 下一步
-- 部署 v0.4，完成测试验收
-- **v0.4.1（待做）**：对已有记录补充 GPS 定位——在卡片详情页加「补充定位」按钮，触发定位并更新数据库坐标
+- **v0.4 bug 修复 ✅ 已完成（2026-04-27）**：后端 AI 识别加 25s 超时 + 错误提示移至 AI 按钮下方
+- **v0.4.1（待做）**：LocationPicker 组件 + 详情页修改定位
+  - 支持 GPS 自动定位（逆地理编码为中文地名）和 POI 关键词搜索两种方式
+  - 同时更新 location 文字和 latitude/longitude 坐标，地图 marker 位置同步
+  - openspec 变更文档：`openspec/changes/location-picker/`
+  - 涉及：新建 `LocationPicker.jsx`、`api/update-record.js`、`supabaseService.updateRecord`
+- **v0.4.2（待做）**：详情页编辑已有记录——标题、日志、物种可直接编辑；地点复用 v0.4.1 的 LocationPicker
+  - openspec 变更文档：`openspec/changes/edit-record-detail/`（已更新，依赖 v0.4.1 先完成）
 - 后续计划购买自定义域名（当前 vercel.app 域名在国内需要梯子访问）
 
 ### 会话切分方案（Claude 额度规划）
