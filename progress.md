@@ -148,13 +148,17 @@
 - records.user_id 列 NOT NULL 约束恢复，安全加固完成
 - ListPage 底部加"匿名模式，记录与本设备绑定"小字提示
 
+## 待处理问题
+- 删除确认弹窗与底部 TabBar 部分重合，显示不完整
+
 ## 下一步
+- **修复删除弹窗层级问题（v0.4.2 之前）**：删除弹窗被底部 TabBar 遮挡，需要调整 z-index 或弹窗定位
 - **v0.4 bug 修复 ✅ 已完成（2026-04-27）**：后端 AI 识别加 25s 超时 + 错误提示移至 AI 按钮下方
-- **v0.4.1（待做）**：LocationPicker 组件 + 详情页修改定位
-  - 支持 GPS 自动定位（逆地理编码为中文地名）和 POI 关键词搜索两种方式
-  - 同时更新 location 文字和 latitude/longitude 坐标，地图 marker 位置同步
-  - openspec 变更文档：`openspec/changes/location-picker/`
-  - 涉及：新建 `LocationPicker.jsx`、`api/update-record.js`、`supabaseService.updateRecord`
+- **v0.4.1 ✅ 已完成（2026-04-27）**：LocationPicker 组件 + 详情页修改定位
+  - GPS 一键定位 + 高德逆地理编码为中文地名
+  - POI 关键词搜索（300ms 防抖，最多 5 条候选）
+  - 确认后同时更新 location 文字和 latitude/longitude 坐标，地图 marker 位置同步
+  - 新建 `api/update-record.js` 后端接口（v0.4.2 复用）
 - **v0.4.2（待做）**：详情页编辑已有记录——标题、日志、物种可直接编辑；地点复用 v0.4.1 的 LocationPicker
   - openspec 变更文档：`openspec/changes/edit-record-detail/`（已更新，依赖 v0.4.1 先完成）
 - 后续计划购买自定义域名（当前 vercel.app 域名在国内需要梯子访问）
