@@ -25,6 +25,8 @@ function ListPage({ initialExpandedId = null }) {
   const [detailSaveError, setDetailSaveError] = useState(null)
   const menuRef = useRef(null)
 
+  const expandedRecord = expandedId ? records.find(r => r.id === expandedId) : null
+
   useEffect(() => {
     getRecords()
       .then((data) => {
@@ -140,8 +142,6 @@ function ListPage({ initialExpandedId = null }) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // 展开态的卡片对象
-  const expandedRecord = expandedId ? records.find(r => r.id === expandedId) : null
 
   return (
     <div className="min-h-screen px-4 py-6" style={{ background: 'var(--bg-primary)' }}>
