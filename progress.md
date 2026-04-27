@@ -175,7 +175,8 @@
 - 删除确认弹窗与底部 TabBar 部分重合，显示不完整
 
 ## 下一步
-- 验收 v0.5 图鉴页，通过后 git commit + vercel 部署
+- 验收 normalize-species-name：上传橘猫/奶牛猫照片，确认物种名一致性
+- 实施 batch-delete-photos：长按多选删除
 - **v0.6（待规划）**：下一个大功能，具体内容待定
 - 后续计划购买自定义域名（当前 vercel.app 域名在国内需要梯子访问）
 
