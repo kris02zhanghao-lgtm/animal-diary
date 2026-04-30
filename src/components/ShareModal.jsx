@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   buildShareFilename,
+  canShareViaSystem,
   copyTextToClipboard,
   copyToClipboard,
   downloadShareCard,
@@ -20,6 +21,10 @@ function ShareModal({ record, isOpen, onClose }) {
   const shareText = useMemo(() => (
     record ? generateShareText(record) : ''
   ), [record])
+  const showSystemShare = useMemo(
+    () => canShareViaSystem(blob, record),
+    [blob, record]
+  )
 
   useEffect(() => {
     if (!isOpen || !record) {
@@ -194,14 +199,16 @@ function ShareModal({ record, isOpen, onClose }) {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={previewUrl ? handleSystemShare : handleCopyText}
-              disabled={isSharing}
-              className="btn btn-md btn-default"
-            >
-              {previewUrl ? (isSharing ? '分享中...' : '分享到...') : '复制文案'}
-            </button>
+          <div className={`grid gap-3 ${showSystemShare ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            {showSystemShare && (
+              <button
+                onClick={previewUrl ? handleSystemShare : handleCopyText}
+                disabled={isSharing}
+                className="btn btn-md btn-default"
+              >
+                {previewUrl ? (isSharing ? '分享中...' : '分享到...') : '复制文案'}
+              </button>
+            )}
             <button
               onClick={previewUrl ? handleDownload : handleCopyText}
               className="btn btn-md btn-default"

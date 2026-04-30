@@ -15,9 +15,9 @@
 - 默认模型：google/gemini-2.5-flash-lite
 - 高德地图 Key 变量名：VITE_AMAP_KEY / VITE_AMAP_SECURITY_CODE
 - .env文件不能上传GitHub
-- 每次commit后更新progress.md
 - 项目PRD见PRD.md，其中标注了MVP范围和版本规划
 - 每次更新progress.md前，先读PRD.md确认还有哪些功能未完成
+- **Git 工作流详见 GIT_WORKFLOW.md**
 - 涉及产品行为、交互流程、UI方向、信息架构等非纯技术性改动时，必须先与 kris 逐项讨论方案，得到明确同意后才能动手修改代码；不能先改后报，也不能默认替用户做产品决策
 
 ## 成长复盘规则

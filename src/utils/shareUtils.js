@@ -201,6 +201,31 @@ export async function shareViaSystem(blob, record) {
   await navigator.share(shareData)
 }
 
+export function canShareViaSystem(blob, record) {
+  if (typeof navigator === 'undefined' || !navigator.share) {
+    return false
+  }
+
+  const userAgent = navigator.userAgent || ''
+  const isQuarkBrowser = /Quark/i.test(userAgent)
+  if (isQuarkBrowser) {
+    return false
+  }
+
+  if (!blob || !record) {
+    return true
+  }
+
+  if (!navigator.canShare) {
+    return true
+  }
+
+  const filename = buildShareFilename(record)
+  const file = new File([blob], filename, { type: 'image/png' })
+
+  return navigator.canShare({ files: [file] })
+}
+
 export function generateShareText(record) {
   return [
     '【偶遇记录】',
