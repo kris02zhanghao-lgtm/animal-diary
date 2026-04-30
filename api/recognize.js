@@ -10,8 +10,10 @@ export default async function handler(req, res) {
   }
 
   const apiKey = process.env.OPENROUTER_API_KEY
+  const model = process.env.OPENROUTER_MODEL || process.env.VITE_OPENROUTER_MODEL || 'openai/gpt-4o-mini'
   console.log('[recognize] env check:', {
     hasKey: !!apiKey,
+    model,
     keyLength: apiKey?.length,
     keyStart: apiKey?.slice(0, 10),
     allEnvKeys: Object.keys(process.env).filter(k => !k.includes('TOKEN') && !k.includes('SECRET')),
@@ -36,7 +38,7 @@ export default async function handler(req, res) {
         'X-Title': 'Animal Diary',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-lite',
+        model,
         messages: [
           {
             role: 'user',
@@ -128,7 +130,7 @@ export default async function handler(req, res) {
           'X-Title': 'Animal Diary',
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.5-flash-lite',
+          model,
           messages: [
             {
               role: 'user',

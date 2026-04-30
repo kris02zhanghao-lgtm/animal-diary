@@ -5,6 +5,7 @@ import 'swiper/css'
 import 'swiper/css/effect-coverflow'
 import { getRecords, deleteRecord, updateRecord } from '../services/supabaseService'
 import LocationPicker from '../components/LocationPicker'
+import ShareModal from '../components/ShareModal'
 
 function ListPage({ initialExpandedId = null }) {
   const [records, setRecords] = useState([])
@@ -13,8 +14,6 @@ function ListPage({ initialExpandedId = null }) {
   const [expandingMenuId, setExpandingMenuId] = useState(null)
   const [loadError, setLoadError] = useState(null)
   const [showLocationPicker, setShowLocationPicker] = useState(false)
-  const [isSavingLocation, setIsSavingLocation] = useState(false)
-  const [locationSaveError, setLocationSaveError] = useState(null)
   const [editingTitle, setEditingTitle] = useState('')
   const [editingJournal, setEditingJournal] = useState('')
   const [editingSpecies, setEditingSpecies] = useState('')
@@ -24,6 +23,7 @@ function ListPage({ initialExpandedId = null }) {
   const [isSaving, setIsSaving] = useState(false)
   const [detailSaveError, setDetailSaveError] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
+  const [shareRecord, setShareRecord] = useState(null)
   const menuRef = useRef(null)
 
   const expandedRecord = expandedId ? records.find(r => r.id === expandedId) : null
@@ -50,7 +50,7 @@ function ListPage({ initialExpandedId = null }) {
       setDetailSaveError(null)
       setIsEditing(false)
     }
-  }, [expandedId])
+  }, [expandedRecord])
 
   const normalizeRecord = (r) => ({
     ...r,
@@ -126,6 +126,11 @@ function ListPage({ initialExpandedId = null }) {
     setLoadError(null)
     setConfirmingId(null)
     setExpandedId(null)
+    setExpandingMenuId(null)
+  }
+
+  const handleOpenShare = (record) => {
+    setShareRecord(record)
     setExpandingMenuId(null)
   }
 
@@ -240,8 +245,7 @@ function ListPage({ initialExpandedId = null }) {
                       >
                         <button
                           onClick={() => {
-                            alert('即将上线，敬请期待！')
-                            setExpandingMenuId(null)
+                            handleOpenShare(expandedRecord)
                           }}
                           className="block w-full text-left px-4 py-2 text-sm first:rounded-t-md"
                           style={{ color: '#794f27' }}
@@ -445,8 +449,7 @@ function ListPage({ initialExpandedId = null }) {
                             </button>
                             <button
                               onClick={() => {
-                                alert('即将上线，敬请期待！')
-                                setExpandingMenuId(null)
+                                handleOpenShare(record)
                               }}
                               className="block w-full text-left px-3 py-2 text-xs"
                               style={{ color: '#794f27' }}
@@ -550,6 +553,12 @@ function ListPage({ initialExpandedId = null }) {
           onClose={() => setShowLocationPicker(false)}
         />
       )}
+
+      <ShareModal
+        record={shareRecord}
+        isOpen={Boolean(shareRecord)}
+        onClose={() => setShareRecord(null)}
+      />
     </div>
   )
 }

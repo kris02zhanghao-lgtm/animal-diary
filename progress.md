@@ -1,6 +1,22 @@
 # 项目进度
 
 ## 当前状态
+🚧 **v0.6「偶遇报告」+ v0.7「分享功能」已完成本地实现，待浏览器/手机手测验收（2026-04-30）**
+
+**本轮已实现：**
+- ✅ 新增 `src/services/reportService.js`：支持「最近三个月 / 自然年」时间窗口聚合，返回总数、Top 物种、Top 地点、最活跃月份、状态标记
+- ✅ 新增 `src/pages/ReportPage.jsx`：报告页完整 UI、空状态/数据积累态/完整报告态、切换时间窗口自动刷新
+- ✅ `BottomTabBar` 新增「报告」入口，`App.jsx` 接入 `ReportPage`
+- ✅ 新增 `src/utils/shareUtils.js`：Canvas 生成 PNG 分享卡片、下载、复制图片、复制文案 fallback
+- ✅ 新增 `src/components/ShareModal.jsx`：分享弹窗、生成中 loading、失败降级到文案分享
+- ✅ `ListPage.jsx` 详情页菜单和时间线卡片菜单里的「分享」已接入真实分享流程，不再是占位提示
+- ✅ 本次改动文件定向 ESLint 通过，`npm run build` 通过
+
+**待手测确认：**
+- ⏳ `vercel dev` 下浏览器完整流程：报告页数据切换、分享卡片生成/下载/复制
+- ⏳ 手机真机测试：分享弹窗交互、剪贴板 fallback、底部导航遮挡情况
+- ⏳ 线上部署后再确认 Clipboard API 和下载行为
+
 ✅ **v0.5.1「图鉴长按多选删除 + 点击跳详情」已完成验收（2026-04-27）**
 
 **v0.5.1 新增功能：**

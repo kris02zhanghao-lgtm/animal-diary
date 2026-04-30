@@ -46,6 +46,7 @@ function BottomTabBar({ active, onChange }) {
       </button>
 
       <TabButton id="collection" label="图鉴" icon="📖" active={active} onClick={handleTabClick} />
+      <TabButton id="report" label="报告" icon="📊" active={active} onClick={handleTabClick} />
     </div>
   )
 }
