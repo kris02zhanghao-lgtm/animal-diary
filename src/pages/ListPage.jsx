@@ -511,13 +511,17 @@ function ListPage({ initialExpandedId = null }) {
       {/* 删除确认弹窗 */}
       {confirmingId && (
         <div
-          className="fixed inset-0 z-50 flex items-end"
+          className="fixed inset-0 z-[140] flex items-end"
           style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
           onClick={() => setConfirmingId(null)}
         >
           <div
-            className="w-full bg-[#fffdf7] rounded-t-2xl px-6 pt-6 pb-10"
-            style={{ border: '3px solid #5a4a3a', boxShadow: '0px -4px 0px #5a4a3a' }}
+            className="w-full bg-[#fffdf7] rounded-t-2xl px-6 pt-6"
+            style={{
+              border: '3px solid #5a4a3a',
+              boxShadow: '0px -4px 0px #5a4a3a',
+              paddingBottom: 'calc(2.5rem + env(safe-area-inset-bottom, 0px))',
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-3xl text-center mb-3">🐾</div>
