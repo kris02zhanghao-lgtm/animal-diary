@@ -70,37 +70,47 @@ function PhotoCard({ record, isSelected, isSelectMode, onLongPress, onToggleSele
 
 function CollectionPage({ onExpandRecord }) {
   const [records, setRecords] = useState([])
-  const [speciesStats, setSpeciesStats] = useState([])
   const [selectedSpecies, setSelectedSpecies] = useState(null)
   const [loadError, setLoadError] = useState(null)
   const [isSelectMode, setIsSelectMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [confirmingBatch, setConfirmingBatch] = useState(false)
 
-  useEffect(() => {
-    fetchAndAggregateRecords()
-  }, [])
-
-  const fetchAndAggregateRecords = async () => {
-    try {
-      const data = await getRecords()
-      setRecords(data.map(normalizeRecord))
-      setLoadError(null)
-    } catch {
-      setLoadError('加载记录失败，请刷新重试')
+  function normalizeRecord(record) {
+    return {
+      ...record,
+      imageBase64: record.image_base64 ?? record.imageBase64,
+      createdAt: record.created_at ?? record.createdAt,
     }
   }
 
   useEffect(() => {
-    const stats = getSpeciesStats(records)
-    setSpeciesStats(stats)
-  }, [records])
+    let isActive = true
 
-  const normalizeRecord = (r) => ({
-    ...r,
-    imageBase64: r.image_base64 ?? r.imageBase64,
-    createdAt: r.created_at ?? r.createdAt,
-  })
+    async function fetchAndAggregateRecords() {
+      try {
+        const data = await getRecords()
+        if (!isActive) {
+          return
+        }
+        setRecords(data.map(normalizeRecord))
+        setLoadError(null)
+      } catch {
+        if (!isActive) {
+          return
+        }
+        setLoadError('加载记录失败，请刷新重试')
+      }
+    }
+
+    fetchAndAggregateRecords()
+
+    return () => {
+      isActive = false
+    }
+  }, [])
+
+  const speciesStats = getSpeciesStats(records)
 
   const handleLongPress = (recordId) => {
     setIsSelectMode(true)

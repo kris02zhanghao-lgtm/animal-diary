@@ -3,8 +3,6 @@ export function getSpeciesStats(records) {
     return []
   }
 
-  const totalCount = records.length
-
   const categoryMap = {}
   records.forEach((record) => {
     const category = record.category?.trim() || '其他'

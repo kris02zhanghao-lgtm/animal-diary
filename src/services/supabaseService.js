@@ -4,7 +4,7 @@ async function authHeaders() {
   try {
     const token = await getAccessToken()
     return { Authorization: `Bearer ${token}` }
-  } catch (err) {
+  } catch {
     return {}
   }
 }
