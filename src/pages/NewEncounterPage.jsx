@@ -23,6 +23,14 @@ function compressImage(file, maxSize = 800) {
   })
 }
 
+async function safeParseJson(response) {
+  try {
+    return await response.json()
+  } catch {
+    return null
+  }
+}
+
 function NewEncounterPage({ onNavigate }) {
   const [selectedImage, setSelectedImage] = useState(null)
   const [location, setLocation] = useState('')
@@ -80,16 +88,16 @@ function NewEncounterPage({ onNavigate }) {
         signal: controller.signal,
       })
       clearTimeout(timeoutId)
-      const result = await response.json()
+      const result = await safeParseJson(response)
 
-      if (result.success) {
+      if (response.ok && result?.success) {
         setTitle(result.title)
         setSpecies(result.species)
         setCategory(result.category || '其他')
         setJournal(result.journal)
         setRecognizedAt(new Date())
       } else {
-        setError(result.error || '识别失败，请重试')
+        setError(result?.error || '识别失败，请重试')
       }
     } catch (e) {
       clearTimeout(timeoutId)

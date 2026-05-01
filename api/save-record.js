@@ -1,28 +1,41 @@
 import { createClient } from '@supabase/supabase-js'
+import {
+  createRequestContext,
+  ensureMethod,
+  getBearerToken,
+  getSupabaseEnv,
+  logError,
+  logInfo,
+  sendError,
+} from './_lib/http.js'
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, error: 'Method not allowed' })
+  const context = createRequestContext(req)
+  if (!ensureMethod(req, res, 'POST')) {
+    return
   }
 
   const { image_base64, location, title, species, category, journal, latitude, longitude } = req.body || {}
 
   if (!image_base64 || !species || !journal) {
-    return res.status(400).json({ success: false, error: '缺少必要字段，无法保存记录' })
+    logInfo(context, 'save_record_missing_fields', {
+      hasImage: Boolean(image_base64),
+      hasSpecies: Boolean(species),
+      hasJournal: Boolean(journal),
+    })
+    return sendError(res, 400, '缺少必要字段，无法保存记录', 'INVALID_RECORD_PAYLOAD')
   }
 
-  const authHeader = req.headers.authorization || ''
-  const token = authHeader.replace('Bearer ', '')
-
+  const token = getBearerToken(req)
   if (!token) {
-    return res.status(401).json({ success: false, error: '缺少身份验证信息，请重新登录' })
+    logInfo(context, 'missing_auth_token')
+    return sendError(res, 401, '缺少身份验证信息，请重新登录', 'AUTH_REQUIRED')
   }
 
-  const supabaseUrl = process.env.VITE_SUPABASE_URL
-  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY
-
+  const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv()
   if (!supabaseUrl || !supabaseAnonKey) {
-    return res.status(500).json({ success: false, error: 'Supabase 服务端配置缺失' })
+    logInfo(context, 'missing_supabase_env')
+    return sendError(res, 500, 'Supabase 服务端配置缺失', 'SERVER_MISCONFIGURED')
   }
 
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -48,11 +61,14 @@ export default async function handler(req, res) {
       .single()
 
     if (error) {
-      return res.status(500).json({ success: false, error: error.message || '保存失败，请重试' })
+      logError(context, 'save_record_failed', error)
+      return sendError(res, 500, error.message || '保存失败，请重试', 'SAVE_RECORD_FAILED')
     }
 
+    logInfo(context, 'save_record_succeeded', { recordId: data?.id || null })
     return res.status(200).json({ success: true, record: data })
   } catch (error) {
-    return res.status(500).json({ success: false, error: error.message || '保存失败，请重试' })
+    logError(context, 'save_record_crashed', error)
+    return sendError(res, 500, error.message || '保存失败，请重试', 'SAVE_RECORD_CRASHED')
   }
 }

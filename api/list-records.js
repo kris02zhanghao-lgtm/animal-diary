@@ -1,22 +1,30 @@
 import { createClient } from '@supabase/supabase-js'
+import {
+  createRequestContext,
+  ensureMethod,
+  getBearerToken,
+  getSupabaseEnv,
+  logError,
+  logInfo,
+  sendError,
+} from './_lib/http.js'
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ success: false, error: 'Method not allowed' })
+  const context = createRequestContext(req)
+  if (!ensureMethod(req, res, 'GET')) {
+    return
   }
 
-  const authHeader = req.headers.authorization || ''
-  const token = authHeader.replace('Bearer ', '')
-
+  const token = getBearerToken(req)
   if (!token) {
-    return res.status(401).json({ success: false, error: '缺少身份验证信息，请重新登录' })
+    logInfo(context, 'missing_auth_token')
+    return sendError(res, 401, '缺少身份验证信息，请重新登录', 'AUTH_REQUIRED')
   }
 
-  const supabaseUrl = process.env.VITE_SUPABASE_URL
-  const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY
-
+  const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv()
   if (!supabaseUrl || !supabaseAnonKey) {
-    return res.status(500).json({ success: false, error: 'Supabase 服务端配置缺失' })
+    logInfo(context, 'missing_supabase_env')
+    return sendError(res, 500, 'Supabase 服务端配置缺失', 'SERVER_MISCONFIGURED')
   }
 
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -30,11 +38,14 @@ export default async function handler(req, res) {
       .order('created_at', { ascending: false })
 
     if (error) {
-      return res.status(500).json({ success: false, error: error.message || '读取记录失败' })
+      logError(context, 'list_records_failed', error)
+      return sendError(res, 500, error.message || '读取记录失败', 'LIST_RECORDS_FAILED')
     }
 
+    logInfo(context, 'list_records_succeeded', { count: data?.length || 0 })
     return res.status(200).json({ success: true, records: data || [] })
   } catch (error) {
-    return res.status(500).json({ success: false, error: error.message || '读取记录失败' })
+    logError(context, 'list_records_crashed', error)
+    return sendError(res, 500, error.message || '读取记录失败', 'LIST_RECORDS_CRASHED')
   }
 }

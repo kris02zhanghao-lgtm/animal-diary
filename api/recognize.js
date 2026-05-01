@@ -1,25 +1,29 @@
+import {
+  createRequestContext,
+  ensureMethod,
+  logError,
+  logInfo,
+  sendError,
+} from './_lib/http.js'
+
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, error: 'Method not allowed' })
+  const context = createRequestContext(req)
+  if (!ensureMethod(req, res, 'POST')) {
+    return
   }
 
   const { imageBase64, location } = req.body
 
   if (!imageBase64) {
-    return res.status(400).json({ success: false, error: 'Missing imageBase64' })
+    logInfo(context, 'recognize_missing_image')
+    return sendError(res, 400, 'Missing imageBase64', 'MISSING_IMAGE')
   }
 
   const apiKey = process.env.OPENROUTER_API_KEY
   const model = process.env.OPENROUTER_MODEL || process.env.VITE_OPENROUTER_MODEL || 'openai/gpt-4o-mini'
-  console.log('[recognize] env check:', {
-    hasKey: !!apiKey,
-    model,
-    keyLength: apiKey?.length,
-    keyStart: apiKey?.slice(0, 10),
-    allEnvKeys: Object.keys(process.env).filter(k => !k.includes('TOKEN') && !k.includes('SECRET')),
-  })
   if (!apiKey) {
-    return res.status(500).json({ success: false, error: 'API key not configured' })
+    logInfo(context, 'missing_openrouter_key', { model })
+    return sendError(res, 500, 'API key not configured', 'SERVER_MISCONFIGURED')
   }
 
   const locationText = location || '城市某处'
@@ -85,18 +89,24 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      return res.status(response.status).json({
-        success: false,
-        error: errorData.error?.message || `API 请求失败: ${response.status}`,
+      logInfo(context, 'recognize_upstream_failed', {
+        model,
+        status: response.status,
       })
+      return sendError(
+        res,
+        response.status,
+        errorData.error?.message || `API 请求失败: ${response.status}`,
+        'OPENROUTER_REQUEST_FAILED'
+      )
     }
 
     const data = await response.json()
     const content = data.choices?.[0]?.message?.content?.trim()
-    console.log('[recognize] raw content:', content)
 
     if (!content) {
-      return res.status(500).json({ success: false, error: '没有收到 AI 响应' })
+      logInfo(context, 'recognize_empty_response', { model })
+      return sendError(res, 500, '没有收到 AI 响应', 'EMPTY_AI_RESPONSE')
     }
 
     let result
@@ -107,15 +117,14 @@ export default async function handler(req, res) {
       if (jsonMatch) {
         result = JSON.parse(jsonMatch[1] || jsonMatch[0])
       } else {
-        return res.status(500).json({ success: false, error: '无法解析 AI 响应' })
+        logInfo(context, 'recognize_unparseable_response', { model })
+        return sendError(res, 500, '无法解析 AI 响应', 'UNPARSEABLE_AI_RESPONSE')
       }
     }
 
     if (!result.species) {
-      return res.status(200).json({
-        success: false,
-        error: '未能识别出动物，请尝试上传更清晰的动物照片',
-      })
+      logInfo(context, 'recognize_species_missing', { model })
+      return sendError(res, 200, '未能识别出动物，请尝试上传更清晰的动物照片', 'SPECIES_NOT_FOUND')
     }
 
     // 分类：根据 species 判断大类
@@ -163,13 +172,18 @@ export default async function handler(req, res) {
         }
       }
     } catch (err) {
-      console.log('[recognize] category classification failed:', err.message)
+      logError(context, 'recognize_category_fallback', err, { model })
       // fallback to default '其他'
     }
 
     const rawTitle = result.title || result.species
     const title = rawTitle.length > 15 ? rawTitle.slice(0, 15) : rawTitle
 
+    logInfo(context, 'recognize_succeeded', {
+      model,
+      species: result.species,
+      category,
+    })
     return res.status(200).json({
       success: true,
       title,
@@ -180,11 +194,10 @@ export default async function handler(req, res) {
   } catch (error) {
     clearTimeout(timeoutId)
     if (error.name === 'AbortError') {
-      return res.status(504).json({ success: false, error: '识别超时（25秒），请重试' })
+      logError(context, 'recognize_timeout', error, { model })
+      return sendError(res, 504, '识别超时（25秒），请重试', 'RECOGNIZE_TIMEOUT')
     }
-    return res.status(500).json({
-      success: false,
-      error: error.message || '识别失败，请检查网络连接后重试',
-    })
+    logError(context, 'recognize_crashed', error, { model })
+    return sendError(res, 500, error.message || '识别失败，请检查网络连接后重试', 'RECOGNIZE_CRASHED')
   }
 }
