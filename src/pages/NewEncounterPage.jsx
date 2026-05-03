@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { saveRecord } from '../services/supabaseService'
+import { saveRecord, confirmReturning } from '../services/supabaseService'
+import ReturningSuggestionModal from '../components/ReturningSuggestionModal'
 
 function compressImage(file, maxSize = 800) {
   return new Promise((resolve) => {
@@ -38,12 +39,16 @@ function NewEncounterPage({ onNavigate }) {
   const [title, setTitle] = useState('')
   const [species, setSpecies] = useState('')
   const [category, setCategory] = useState('')
+  const [speciesTag, setSpeciesTag] = useState('')
   const [journal, setJournal] = useState('')
   const [recognizedAt, setRecognizedAt] = useState(null)
   const [error, setError] = useState(null)
   const [saveError, setSaveError] = useState(null)
   const [geoStatus, setGeoStatus] = useState('idle')
   const [coordinates, setCoordinates] = useState(null)
+  const [suggestedRecord, setSuggestedRecord] = useState(null)
+  const [suggestedScore, setSuggestedScore] = useState(null)
+  const [savedRecord, setSavedRecord] = useState(null)
 
   useEffect(() => {
     if (!navigator.geolocation) return
@@ -94,6 +99,7 @@ function NewEncounterPage({ onNavigate }) {
         setTitle(result.title)
         setSpecies(result.species)
         setCategory(result.category || '其他')
+        setSpeciesTag(result.speciesTag || 'other-animal')
         setJournal(result.journal)
         setRecognizedAt(new Date())
       } else {
@@ -115,20 +121,50 @@ function NewEncounterPage({ onNavigate }) {
     setSaveError(null)
 
     try {
-      await saveRecord({
+      const result = await saveRecord({
         image_base64: selectedImage,
         location: location || '城市某处',
         title,
         species,
         category,
+        species_tag: speciesTag || 'other-animal',
         journal,
         latitude: coordinates?.lat ?? null,
         longitude: coordinates?.lng ?? null,
       })
-      onNavigate('list')
+
+      setSavedRecord(result.record)
+
+      if (result.returningDetection?.detected && result.returningDetection?.score >= 60) {
+        setSuggestedRecord(result.returningDetection.similarRecord)
+        setSuggestedScore(result.returningDetection.score)
+      } else {
+        onNavigate('list')
+      }
     } catch {
       setSaveError('保存失败，请重试')
     }
+  }
+
+  const handleConfirmReturning = async () => {
+    if (!savedRecord) return
+
+    try {
+      await confirmReturning(savedRecord.id)
+      setSuggestedRecord(null)
+      setSuggestedScore(null)
+      setSavedRecord(null)
+      onNavigate('list')
+    } catch {
+      setSaveError('确认失败，请重试')
+    }
+  }
+
+  const handleDismissReturning = () => {
+    setSuggestedRecord(null)
+    setSuggestedScore(null)
+    setSavedRecord(null)
+    onNavigate('list')
   }
 
   const formatDate = (date) => {
@@ -307,6 +343,16 @@ function NewEncounterPage({ onNavigate }) {
           </div>
         )}
       </div>
+
+      {/* 回头客建议弹窗 */}
+      {suggestedRecord && (
+        <ReturningSuggestionModal
+          similarRecord={suggestedRecord}
+          score={suggestedScore}
+          onConfirm={handleConfirmReturning}
+          onDismiss={handleDismissReturning}
+        />
+      )}
     </div>
   )
 }

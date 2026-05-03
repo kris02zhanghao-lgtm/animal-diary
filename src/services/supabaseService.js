@@ -62,7 +62,10 @@ export async function saveRecord(record) {
       body: JSON.stringify(record),
     }, '保存失败，请重试')
 
-    return result.record || null
+    return {
+      record: result.record || null,
+      returningDetection: result.returningDetection || { detected: false },
+    }
   } catch (err) {
     console.error('Error saving record:', err)
     throw err
@@ -93,6 +96,36 @@ export async function deleteRecord(id) {
     }, '删除记录失败')
   } catch (err) {
     console.error('Error deleting record:', err)
+    throw err
+  }
+}
+
+export async function confirmReturning(recordId) {
+  try {
+    const headers = await authHeaders()
+    await requestJson('/api/confirm-returning', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify({ recordId }),
+    }, '确认失败，请重试')
+  } catch (err) {
+    console.error('Error confirming returning:', err)
+    throw err
+  }
+}
+
+export async function detectReturning(recordId) {
+  try {
+    const headers = await authHeaders()
+    const result = await requestJson('/api/detect-returning', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...headers },
+      body: JSON.stringify({ recordId }),
+    }, '检测失败，请重试')
+
+    return result
+  } catch (err) {
+    console.error('Error detecting returning:', err)
     throw err
   }
 }

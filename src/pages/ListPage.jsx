@@ -3,9 +3,10 @@ import { Swiper, SwiperSlide } from 'swiper/react'
 import { EffectCoverflow } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/effect-coverflow'
-import { getRecords, deleteRecord, updateRecord } from '../services/supabaseService'
+import { getRecords, deleteRecord, updateRecord, detectReturning, confirmReturning } from '../services/supabaseService'
 import LocationPicker from '../components/LocationPicker'
 import ShareModal from '../components/ShareModal'
+import ReturningSuggestionModal from '../components/ReturningSuggestionModal'
 
 function ListPage({ initialExpandedId = null }) {
   const [records, setRecords] = useState([])
@@ -24,6 +25,14 @@ function ListPage({ initialExpandedId = null }) {
   const [detailSaveError, setDetailSaveError] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
   const [shareRecord, setShareRecord] = useState(null)
+  const [detectingId, setDetectingId] = useState(null)
+  const [detectingError, setDetectingError] = useState(null)
+  const [detectionMessage, setDetectionMessage] = useState(null)
+  const [suggestedRecord, setSuggestedRecord] = useState(null)
+  const [suggestedScore, setSuggestedScore] = useState(null)
+  const [suggestedNewRecordId, setSuggestedNewRecordId] = useState(null)
+  const [prevRecord, setPrevRecord] = useState(null)
+  const [navigatingToLinked, setNavigatingToLinked] = useState(false)
   const menuRef = useRef(null)
 
   const expandedRecord = expandedId ? records.find(r => r.id === expandedId) : null
@@ -93,6 +102,62 @@ function ListPage({ initialExpandedId = null }) {
     setEditingLatitude(latitude)
     setEditingLongitude(longitude)
     setShowLocationPicker(false)
+  }
+
+  const handleNavigateToLinked = (targetId) => {
+    setPrevRecord(expandedRecord)
+    setNavigatingToLinked(true)
+    setTimeout(() => {
+      setExpandedId(targetId)
+      setNavigatingToLinked(false)
+    }, 400)
+  }
+
+  const handleDetectReturning = async () => {
+    if (!expandedRecord) return
+    setDetectingId(expandedRecord.id)
+    setDetectingError(null)
+    setDetectionMessage(null)
+
+    try {
+      const result = await detectReturning(expandedRecord.id)
+
+      if (result.detected && result.score >= 60) {
+        setSuggestedRecord(result.similarRecord)
+        setSuggestedScore(result.score)
+        setSuggestedNewRecordId(expandedRecord.id)
+        const updatedRecords = records.map(r =>
+          r.id === expandedRecord.id
+            ? { ...r, similarity_score: result.score, similar_record_id: result.similarRecordId }
+            : r
+        )
+        setRecords(updatedRecords)
+      } else {
+        const msg = '未找到相似记录，可能是新朋友呢'
+        setDetectionMessage(msg)
+        setTimeout(() => setDetectionMessage(null), 5000)
+      }
+    } catch {
+      setDetectingError('检测失败，请重试')
+    } finally {
+      setDetectingId(null)
+      setExpandingMenuId(null)
+    }
+  }
+
+  const handleConfirmReturningFromDetail = async () => {
+    if (!suggestedNewRecordId) return
+    try {
+      await confirmReturning(suggestedNewRecordId)
+      const updated = await getRecords()
+      setRecords(updated.map(normalizeRecord))
+    } catch {
+      // 失败时静默，关闭弹窗
+    } finally {
+      setSuggestedRecord(null)
+      setSuggestedScore(null)
+      setSuggestedNewRecordId(null)
+    }
   }
 
   const handleSaveDetail = async () => {
@@ -211,20 +276,38 @@ function ListPage({ initialExpandedId = null }) {
             ) : (
               <>
                 <button
-                  onClick={() => setExpandedId(null)}
+                  onClick={() => { setExpandedId(null); setPrevRecord(null) }}
                   className="text-2xl"
                   style={{ color: 'var(--text-primary)' }}
                   aria-label="返回"
                 >
                   ←
                 </button>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => setIsEditing(true)}
                     className="text-sm px-3 py-1 rounded-full"
                     style={{ background: '#f0e8d8', color: '#7a5c3a' }}
                   >
                     ✏️ 编辑
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (expandedRecord.similar_record_id) {
+                        handleNavigateToLinked(expandedRecord.similar_record_id)
+                      } else {
+                        handleDetectReturning()
+                      }
+                    }}
+                    disabled={detectingId === expandedId || navigatingToLinked}
+                    className="text-sm px-3 py-1 rounded-full"
+                    style={{
+                      background: (detectingId === expandedId || navigatingToLinked) ? '#ccc' : '#f0e8d8',
+                      color: '#7a5c3a',
+                      cursor: (detectingId === expandedId || navigatingToLinked) ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {navigatingToLinked ? '跳转中...' : detectingId === expandedId ? '检测中...' : expandedRecord.similar_record_id ? '🔍 查看关联' : '🔍 回头客'}
                   </button>
                   <div className="relative" ref={menuRef}>
                     <button
@@ -240,14 +323,24 @@ function ListPage({ initialExpandedId = null }) {
                         style={{
                           background: 'rgb(247, 243, 223)',
                           boxShadow: '0 4px 10px rgba(107, 92, 67, 0.42)',
-                          minWidth: '120px'
+                          minWidth: '140px'
                         }}
                       >
+                        <button
+                          onClick={handleDetectReturning}
+                          disabled={detectingId === expandedId}
+                          className="block w-full text-left px-4 py-2 text-sm"
+                          style={{ color: '#794f27' }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = '#f0e8d8'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          {detectingId === expandedId ? '检测中...' : '查找回头客'}
+                        </button>
                         <button
                           onClick={() => {
                             handleOpenShare(expandedRecord)
                           }}
-                          className="block w-full text-left px-4 py-2 text-sm first:rounded-t-md"
+                          className="block w-full text-left px-4 py-2 text-sm"
                           style={{ color: '#794f27' }}
                           onMouseEnter={(e) => e.currentTarget.style.background = '#f0e8d8'}
                           onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
@@ -273,6 +366,19 @@ function ListPage({ initialExpandedId = null }) {
               </>
             )}
           </div>
+
+          {/* 面包屑：来自关联跳转时显示 */}
+          {prevRecord && (
+            <div className="flex items-center gap-2 text-xs mb-2 px-1" style={{ color: '#7a5c3a' }}>
+              <button
+                onClick={() => handleNavigateToLinked(prevRecord.id)}
+                className="flex items-center gap-1 hover:underline"
+              >
+                ← {prevRecord.species || '上一条记录'}
+              </button>
+              <span style={{ color: '#c9a97a' }}>/ 关联记录</span>
+            </div>
+          )}
 
           {/* 详情卡片 */}
           <div
@@ -363,6 +469,66 @@ function ListPage({ initialExpandedId = null }) {
                   <p className="text-xs text-red-500">{detailSaveError}</p>
                 )}
               </div>
+
+              {/* 我指向的关联 */}
+              {expandedRecord.similarity_score >= 40 && expandedRecord.similar_record_id && (
+                <div className="pt-4 border-t border-gray-200">
+                  <p className="text-xs text-gray-500 mb-2">关联记录</p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      {expandedRecord.confirmed_returning && (
+                        <p className="text-sm font-medium text-[#d4874b] mb-1">🐾 老朋友</p>
+                      )}
+                      <p className="text-sm text-gray-700">
+                        相似度 <span className="font-bold text-[#d4874b]">{expandedRecord.similarity_score}%</span>
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleNavigateToLinked(expandedRecord.similar_record_id)}
+                      className="text-xs px-3 py-1 rounded-full font-medium"
+                      style={{ background: '#e8d9c0', color: '#7a5c3a' }}
+                    >
+                      查看关联
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* 指向我的关联（反向） */}
+              {expandedRecord.linked_from && expandedRecord.linked_from.length > 0 && (
+                <div className="pt-4 border-t border-gray-200">
+                  <p className="text-xs text-gray-500 mb-2">被以下记录关联</p>
+                  <div className="space-y-2">
+                    {expandedRecord.linked_from.map(linked => (
+                      <div key={linked.id} className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-gray-700">{linked.species}</p>
+                          <p className="text-xs text-gray-400">{formatDate(linked.created_at)} · 相似度 {linked.similarity_score}%</p>
+                        </div>
+                        <button
+                          onClick={() => handleNavigateToLinked(linked.id)}
+                          className="text-xs px-3 py-1 rounded-full font-medium"
+                          style={{ background: '#e8d9c0', color: '#7a5c3a' }}
+                        >
+                          查看
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 检测反馈提示 */}
+              {detectionMessage && (
+                <div className="pt-3 border-t border-gray-200">
+                  <p className="text-sm text-[#7a5c3a] text-center">{detectionMessage}</p>
+                </div>
+              )}
+              {detectingError && detectingId === expandedRecord.id && (
+                <div className="pt-3 border-t border-gray-200">
+                  <p className="text-sm text-orange-600 text-center">{detectingError}</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -563,6 +729,19 @@ function ListPage({ initialExpandedId = null }) {
         isOpen={Boolean(shareRecord)}
         onClose={() => setShareRecord(null)}
       />
+
+      {suggestedRecord && (
+        <ReturningSuggestionModal
+          similarRecord={suggestedRecord}
+          score={suggestedScore}
+          onConfirm={handleConfirmReturningFromDetail}
+          onDismiss={() => {
+            setSuggestedRecord(null)
+            setSuggestedScore(null)
+            setSuggestedNewRecordId(null)
+          }}
+        />
+      )}
     </div>
   )
 }

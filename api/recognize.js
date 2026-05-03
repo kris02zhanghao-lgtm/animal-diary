@@ -6,6 +6,18 @@ import {
   sendError,
 } from './_lib/http.js'
 
+const SPECIES_TAG_DEFINITIONS = {
+  猫: ['橘猫', '奶牛猫', '狸花猫', '黑猫', '白猫', '三花猫', '玳瑁猫', '英短', '美短', '布偶猫', '波斯猫', '缅因猫', '暹罗猫', '折耳猫', '银渐层'],
+  狗: ['泰迪/贵宾', '博美', '比熊', '马尔济斯', '约克夏', '腊肠', '巴哥', '雪纳瑞', '柴犬', '柯基', '法斗', '英斗', '秋田', '金毛', '拉布拉多', '萨摩耶', '阿拉斯加', '哈士奇', '边牧', '中华田园犬', '其他犬种'],
+  鸟: ['麻雀', '鸽子', '乌鸦', '喜鹊', '鹦鹉', '白鹭', '野鸭', '猫头鹰', '燕子', '翠鸟', '孔雀', '火烈鸟', '鸵鸟', '丹顶鹤', '其他鸟类'],
+  哺乳动物: ['松鼠', '兔子', '刺猬', '浣熊', '仓鼠', '花栗鼠', '羊驼', '小熊猫', '水獭', '龙猫/栗鼠', '雪貂', '狐狸', '梅花鹿', '土拨鼠', '宠物猪'],
+  大型野生: ['大熊猫', '长颈鹿', '斑马', '亚洲象', '非洲象', '狮子', '老虎', '猎豹', '雪豹', '北极熊', '棕熊', '河马', '犀牛'],
+  灵长类: ['猕猴', '金丝猴', '黑猩猩', '猩猩', '大猩猩', '长臂猿'],
+  爬行水生: ['乌龟', '青蛙', '蜥蜴', '壁虎', '蛇', '鳄鱼', '企鹅', '海豚', '海豹', '海狮'],
+}
+
+const ALL_SPECIES_TAGS = Object.values(SPECIES_TAG_DEFINITIONS).flat().join('、')
+
 export default async function handler(req, res) {
   const context = createRequestContext(req)
   if (!ensureMethod(req, res, 'POST')) {
@@ -127,11 +139,17 @@ export default async function handler(req, res) {
       return sendError(res, 200, '未能识别出动物，请尝试上传更清晰的动物照片', 'SPECIES_NOT_FOUND')
     }
 
-    // 分类：根据 species 判断大类
+    // 分类：根据 species 同时返回 category（大类）和 species_tag（中类）
     let category = '其他'
+    let speciesTag = 'other-animal'
+    let classifyTimeoutId = null
     try {
-      const categoryResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      const classifyController = new AbortController()
+      classifyTimeoutId = setTimeout(() => classifyController.abort(), 15000)
+
+      const classifyResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
+        signal: classifyController.signal,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`,
@@ -143,37 +161,50 @@ export default async function handler(req, res) {
           messages: [
             {
               role: 'user',
-              content: `物种：${result.species}
+              content: `物种识别结果：${result.species}
 
-以下哪个是这个物种所属的大类？
-- 猫
-- 狗
-- 鸟
-- 松鼠
-- 兔子
-- 其他
+请根据这个物种，返回标准化分类。
 
-回复ONLY大类名，不要有其他词语。例如回复：猫`,
+分类规则：
+- 猫类：优先用毛色标签（橘猫/黑猫/三花猫...），仅当品种特征极其突出时用品种（英短/布偶/暹罗/折耳）。例如"橘色英短猫"应标记为"橘猫"，"暹罗猫"因特征明显应标记为"暹罗猫"
+- 犬类：优先用品种标签，品种不确定时选"中华田园犬"
+- 其他：按预定义列表直接映射
+
+大类选择：猫、狗、鸟、哺乳动物、大型野生、灵长类、爬行水生、其他
+中类预定义列表（必须从以下选择，不要创造新标签）：
+${ALL_SPECIES_TAGS}
+
+返回JSON（只有一行，不要有其他文字）：{"category": "...", "species_tag": "..."}
+例如：{"category": "猫", "species_tag": "橘猫"}`,
             },
           ],
         }),
       })
 
-      if (categoryResponse.ok) {
-        const categoryData = await categoryResponse.json()
-        const categoryContent = categoryData.choices?.[0]?.message?.content?.trim()
-        if (categoryContent) {
-          // 灵活匹配：检查返回值中是否包含关键词
-          if (categoryContent.includes('猫')) category = '猫'
-          else if (categoryContent.includes('狗')) category = '狗'
-          else if (categoryContent.includes('鸟')) category = '鸟'
-          else if (categoryContent.includes('松鼠')) category = '松鼠'
-          else if (categoryContent.includes('兔子')) category = '兔子'
+      clearTimeout(classifyTimeoutId)
+
+      if (classifyResponse.ok) {
+        const classifyData = await classifyResponse.json()
+        const classifyContent = classifyData.choices?.[0]?.message?.content?.trim()
+        if (classifyContent) {
+          try {
+            const parsed = JSON.parse(classifyContent)
+            if (parsed.category) category = parsed.category
+            if (parsed.species_tag) speciesTag = parsed.species_tag
+          } catch {
+            // fallback to defaults
+          }
         }
       }
     } catch (err) {
-      logError(context, 'recognize_category_fallback', err, { model })
-      // fallback to default '其他'
+      clearTimeout(classifyTimeoutId)
+      if (err.name === 'AbortError') {
+        logError(context, 'recognize_classify_timeout', err, { model })
+        // fallback to defaults, don't fail the entire request
+      } else {
+        logError(context, 'recognize_classify_fallback', err, { model })
+      }
+      // fallback to defaults
     }
 
     const rawTitle = result.title || result.species
@@ -183,12 +214,14 @@ export default async function handler(req, res) {
       model,
       species: result.species,
       category,
+      speciesTag,
     })
     return res.status(200).json({
       success: true,
       title,
       species: result.species,
       category,
+      speciesTag,
       journal: result.journal,
     })
   } catch (error) {

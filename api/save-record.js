@@ -4,10 +4,12 @@ import {
   ensureMethod,
   getBearerToken,
   getSupabaseEnv,
+  getServiceRoleKey,
   logError,
   logInfo,
   sendError,
 } from './_lib/http.js'
+import { performDetectReturning } from './_lib/detectReturning.js'
 
 export default async function handler(req, res) {
   const context = createRequestContext(req)
@@ -15,7 +17,7 @@ export default async function handler(req, res) {
     return
   }
 
-  const { image_base64, location, title, species, category, journal, latitude, longitude } = req.body || {}
+  const { image_base64, location, title, species, category, species_tag, journal, latitude, longitude } = req.body || {}
 
   if (!image_base64 || !species || !journal) {
     logInfo(context, 'save_record_missing_fields', {
@@ -38,6 +40,12 @@ export default async function handler(req, res) {
     return sendError(res, 500, 'Supabase 服务端配置缺失', 'SERVER_MISCONFIGURED')
   }
 
+  const serviceRoleKey = getServiceRoleKey()
+  if (!serviceRoleKey) {
+    logInfo(context, 'missing_service_role_key')
+    return sendError(res, 500, 'Service role key 缺失', 'SERVER_MISCONFIGURED')
+  }
+
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     global: { headers: { Authorization: `Bearer ${token}` } },
   })
@@ -52,6 +60,7 @@ export default async function handler(req, res) {
           title: title || species,
           species,
           category: category || '其他',
+          species_tag: species_tag || 'other-animal',
           journal,
           latitude: latitude ?? null,
           longitude: longitude ?? null,
@@ -65,8 +74,37 @@ export default async function handler(req, res) {
       return sendError(res, 500, error.message || '保存失败，请重试', 'SAVE_RECORD_FAILED')
     }
 
-    logInfo(context, 'save_record_succeeded', { recordId: data?.id || null })
-    return res.status(200).json({ success: true, record: data })
+    const recordId = data?.id
+    logInfo(context, 'save_record_succeeded', { recordId })
+
+    let returningDetection = null
+    try {
+      const apiKey = process.env.OPENROUTER_API_KEY
+      const model = process.env.OPENROUTER_MODEL || process.env.VITE_OPENROUTER_MODEL || 'openai/gpt-4o-mini'
+
+      if (apiKey && model) {
+        const supabaseUser = supabase
+        const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
+
+        returningDetection = await performDetectReturning(
+          context,
+          recordId,
+          supabaseUser,
+          supabaseAdmin,
+          apiKey,
+          model
+        )
+      }
+    } catch (detectError) {
+      logError(context, 'save_record_detect_returning_failed', detectError)
+      // 检测失败不影响保存结果，继续返回成功
+    }
+
+    return res.status(200).json({
+      success: true,
+      record: data,
+      returningDetection: returningDetection || { detected: false },
+    })
   } catch (error) {
     logError(context, 'save_record_crashed', error)
     return sendError(res, 500, error.message || '保存失败，请重试', 'SAVE_RECORD_CRASHED')
