@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { generateReport } from '../services/reportService'
+import { getAccessToken } from '../services/authService'
 
 const timeRangeOptions = [
   { id: 'recent3months', label: '最近三个月' },
@@ -29,6 +30,31 @@ function getGrowingHint(report) {
   return ''
 }
 
+async function requestInsights(timeWindow, signal) {
+  const token = await getAccessToken()
+  const response = await fetch('/api/generate-insights', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ timeWindow }),
+    signal,
+  })
+
+  const result = await response.json().catch(() => null)
+
+  if (response.status === 401) {
+    throw new Error('登录已失效，请刷新页面')
+  }
+
+  if (!response.ok || !result) {
+    throw new Error(result?.error || '洞察生成失败')
+  }
+
+  return result
+}
+
 function StatCard({ emoji, title, children }) {
   return (
     <section
@@ -44,6 +70,74 @@ function StatCard({ emoji, title, children }) {
         <h2 className="text-base font-bold text-[#794f27] m-0">{title}</h2>
       </div>
       {children}
+    </section>
+  )
+}
+
+function getInsightEmoji(text, index) {
+  if (/(早晨|上午|傍晚|夜晚)/.test(text)) return '🌙'
+  if (/(附近|楼下|公园|公司|街角|路口|门口|草坪)/.test(text)) return '📍'
+  if (/(猫|狗|鸟|松鼠|兔|刺猬|鸽|麻雀)/.test(text)) return '🐾'
+
+  return ['🌿', '🧭', '🍂', '🫧', '✨'][index % 5]
+}
+
+function InsightsSection({ insights, insightsLoading, insightsError }) {
+  const isInsufficient = insightsError === 'insufficient_data'
+  const isFailure = insightsError && insightsError !== 'insufficient_data'
+
+  return (
+    <section
+      className="rounded-[20px] p-4 sm:p-5"
+      style={{
+        background: 'rgb(247, 243, 223)',
+        boxShadow: '0 4px 10px rgba(107, 92, 67, 0.18)',
+        border: '2px solid rgba(121, 79, 39, 0.08)',
+      }}
+      aria-live="polite"
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-xl">📝</span>
+        <h2 className="text-base font-bold text-[#794f27] m-0">你的动物观察记录</h2>
+      </div>
+
+      {insightsLoading ? (
+        <div className="rounded-[18px] bg-[#fffaf0] px-4 py-5 text-center">
+          <div className="w-8 h-8 mx-auto mb-3 rounded-full border-[3px] border-[#ead8bc] border-t-[#794f27] animate-spin" />
+          <p className="text-sm text-[#9f927d]">生成中...</p>
+        </div>
+      ) : isInsufficient ? (
+        <div className="rounded-[18px] bg-[#fffaf0] px-4 py-5">
+          <p className="text-base font-semibold leading-7 text-[#7a5c3a]">
+            记录越多，洞察越有趣，继续探索吧！
+          </p>
+        </div>
+      ) : isFailure ? (
+        <div className="rounded-[18px] bg-[#fffaf0] px-4 py-5">
+          <p className="text-base font-semibold leading-7 text-[#7a5c3a]">
+            数据整理中，下次打开会有更多发现
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {insights.map((insight, index) => (
+            <div
+              key={`${insight}-${index}`}
+              className="rounded-[18px] border px-4 py-4"
+              style={{
+                background: '#fffdf7',
+                borderColor: 'rgba(121, 79, 39, 0.12)',
+                boxShadow: '0 3px 10px rgba(107, 92, 67, 0.08)',
+              }}
+            >
+              <p className="m-0 flex items-start gap-3 text-lg font-bold leading-7 text-[#4f3826]">
+                <span className="shrink-0 text-xl">{getInsightEmoji(insight, index)}</span>
+                <span>{insight}</span>
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   )
 }
@@ -66,7 +160,7 @@ function RankedList({ items, nameKey }) {
             <span className="text-sm text-[#5a4a3a] truncate">{item[nameKey]}</span>
           </div>
           <span className="text-sm font-bold text-[#3d2b1a] shrink-0">
-            {item.count} {nameKey === 'species' ? '只' : '次'}
+            {item.count} 次
           </span>
         </div>
       ))}
@@ -79,6 +173,9 @@ function ReportPage() {
   const [report, setReport] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [insights, setInsights] = useState([])
+  const [insightsLoading, setInsightsLoading] = useState(false)
+  const [insightsError, setInsightsError] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -110,9 +207,60 @@ function ReportPage() {
     }
   }, [timeRange])
 
+  useEffect(() => {
+    if (isLoading || !report?.hasData) {
+      setInsights([])
+      setInsightsLoading(false)
+      setInsightsError('')
+      return
+    }
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
+    const windowParam = timeRange === 'naturalYear' ? 'year' : 'month'
+    let cancelled = false
+
+    async function loadInsights() {
+      setInsightsLoading(true)
+      setInsightsError('')
+
+      try {
+        const result = await requestInsights(windowParam, controller.signal)
+        if (cancelled) return
+
+        if (result.success === false) {
+          setInsights([])
+          setInsightsError('generation_failed')
+          return
+        }
+
+        setInsights(result.insights || [])
+        setInsightsError(result.reason === 'insufficient_data' ? 'insufficient_data' : '')
+      } catch {
+        if (!cancelled) {
+          setInsights([])
+          setInsightsError('generation_failed')
+        }
+      } finally {
+        clearTimeout(timeoutId)
+        if (!cancelled) {
+          setInsightsLoading(false)
+        }
+      }
+    }
+
+    loadInsights()
+
+    return () => {
+      cancelled = true
+      clearTimeout(timeoutId)
+      controller.abort()
+    }
+  }, [isLoading, report?.hasData, timeRange])
+
   const heroText = useMemo(() => {
     if (!report) return ''
-    return `你${periodLabel(timeRange)}遇见了 ${report.total} 只动物`
+    return `你${periodLabel(timeRange)}遇见了 ${report.total} 次动物`
   }, [report, timeRange])
 
   return (
@@ -180,14 +328,26 @@ function ReportPage() {
             <p className="text-sm leading-6 text-[#9f927d]">去记录你的第一次发现吧 🐾</p>
           </div>
         ) : report?.status === 'sparse' ? (
-          <div
-            className="rounded-[24px] px-5 py-10 text-center"
-            style={{ background: 'rgb(247, 243, 223)', boxShadow: '0 4px 10px rgba(107, 92, 67, 0.18)' }}
-          >
-            <div className="text-5xl mb-4">🌱</div>
-            <p className="text-lg font-bold text-[#5a4a3a] mb-2">偶遇正在冒头</p>
-            <p className="text-sm leading-6 text-[#9f927d]">{getGrowingHint(report)}</p>
-          </div>
+          <>
+            <div
+              className="rounded-[24px] px-5 py-10 text-center"
+              style={{ background: 'rgb(247, 243, 223)', boxShadow: '0 4px 10px rgba(107, 92, 67, 0.18)' }}
+            >
+              <div className="text-5xl mb-4">🌱</div>
+              <p className="text-lg font-bold text-[#5a4a3a] mb-2">偶遇正在冒头</p>
+              <p className="text-sm leading-6 text-[#9f927d]">{getGrowingHint(report)}</p>
+            </div>
+
+            <InsightsSection
+              insights={insights}
+              insightsLoading={insightsLoading}
+              insightsError={insightsError}
+            />
+
+            <p className="pb-2 text-center text-xs text-[#b0a090]">
+              数据更新于 {formatGeneratedTime(report.generatedAt)}
+            </p>
+          </>
         ) : report ? (
           <>
             {report.status === 'growing' && (
@@ -219,7 +379,7 @@ function ReportPage() {
                     className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold"
                     style={{ background: 'rgba(255,255,255,0.85)', color: '#7a5c3a' }}
                   >
-                    {item.species} {item.count} 只
+                    {item.species} {item.count} 次
                   </span>
                 ))}
               </div>
@@ -242,11 +402,17 @@ function ReportPage() {
                     {report.mostActiveMonth.month} 最热闹
                   </p>
                   <p className="text-sm text-[#7a5c3a]">
-                    那个月你遇见了 {report.mostActiveMonth.count} 只动物。
+                    那个月你遇见了 {report.mostActiveMonth.count} 次动物。
                   </p>
                 </div>
               </StatCard>
             )}
+
+            <InsightsSection
+              insights={insights}
+              insightsLoading={insightsLoading}
+              insightsError={insightsError}
+            />
 
             <p className="pb-2 text-center text-xs text-[#b0a090]">
               数据更新于 {formatGeneratedTime(report.generatedAt)}
