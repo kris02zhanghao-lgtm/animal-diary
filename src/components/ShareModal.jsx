@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { trackEvent } from '../services/analyticsService'
 import {
   buildShareFilename,
   canShareViaSystem,
@@ -86,6 +87,7 @@ function ShareModal({ record, isOpen, onClose }) {
     if (!blob) return
     downloadShareCard(blob, buildShareFilename(record))
     setActionMessage('图片已下载')
+    trackEvent('share_single', { action: 'download' })
   }
 
   const handleCopy = async () => {
@@ -125,6 +127,7 @@ function ShareModal({ record, isOpen, onClose }) {
     try {
       setIsSharing(true)
       await shareViaSystem(blob, record)
+      trackEvent('share_single', { action: 'system' })
       setActionMessage('已打开系统分享')
     } catch (shareError) {
       if (shareError?.name !== 'AbortError') {

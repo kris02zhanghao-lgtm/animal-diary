@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { trackEvent } from '../services/analyticsService'
 import {
   generateCollectionShareCard,
   downloadShareCard,
@@ -64,6 +65,7 @@ function ShareCollectionModal({ isOpen, onClose, speciesStats, totalCount }) {
     if (!blob) return
     downloadShareCard(blob, `动物图鉴-${new Date().toISOString().slice(0, 10)}.png`)
     setActionMessage('图片已下载')
+    trackEvent('share_collection', { action: 'download' })
   }
 
   const handleCopy = async () => {
@@ -87,6 +89,7 @@ function ShareCollectionModal({ isOpen, onClose, speciesStats, totalCount }) {
     try {
       setIsSharing(true)
       await shareViaSystem(blob, { species: '我的动物图鉴', createdAt: new Date().toISOString(), title: `已发现 ${speciesStats.length} 种动物` })
+      trackEvent('share_collection', { action: 'system' })
       setActionMessage('已打开系统分享')
     } catch (err) {
       if (err?.name !== 'AbortError') setError('当前环境暂不支持系统分享，请改用下载')

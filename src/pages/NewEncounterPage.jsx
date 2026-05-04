@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { saveRecord, confirmReturning } from '../services/supabaseService'
+import { trackEvent } from '../services/analyticsService'
 import ReturningSuggestionModal from '../components/ReturningSuggestionModal'
 import SpeciesCorrectionSheet from '../components/SpeciesCorrectionSheet'
 import LocationPicker from '../components/LocationPicker'
@@ -86,6 +87,8 @@ function NewEncounterPage({ onNavigate }) {
     setError(null)
     setSaveError(null)
 
+    trackEvent('recognize_attempt')
+
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 30000)
 
@@ -106,15 +109,19 @@ function NewEncounterPage({ onNavigate }) {
         setSpeciesTag(result.speciesTag || 'other-animal')
         setJournal(result.journal)
         setRecognizedAt(new Date())
+        trackEvent('recognize_success', { category: result.category, species: result.species })
       } else {
         setError(result?.error || '识别失败，请重试')
+        trackEvent('recognize_failure', { error_code: result?.code || 'unknown' })
       }
     } catch (e) {
       clearTimeout(timeoutId)
       if (e.name === 'AbortError') {
         setError('识别超时（30秒），请重试')
+        trackEvent('recognize_failure', { error_code: 'timeout' })
       } else {
         setError('网络错误，请检查连接后重试')
+        trackEvent('recognize_failure', { error_code: 'network_error' })
       }
     } finally {
       setIsLoading(false)
@@ -138,6 +145,7 @@ function NewEncounterPage({ onNavigate }) {
       })
 
       setSavedRecord(result.record)
+      trackEvent('save_record', { category, species })
 
       if (result.returningDetection?.detected && result.returningDetection?.score >= 60) {
         setSuggestedRecord(result.returningDetection.similarRecord)
