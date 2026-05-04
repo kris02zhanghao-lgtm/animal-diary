@@ -1,6 +1,18 @@
 # 项目进度
 
 ## 当前状态
+🚧 **v1.0「数据埋点」已完成开发和线上验证（2026-05-04）**
+- ✅ 数据库设计：新增 `events` 表（Supabase 迁移文件）用于记录用户行为事件，含 id/user_id/event_name/properties/created_at，RLS 保证用户数据隔离
+- ✅ 埋点服务封装：新增 `src/services/analyticsService.js`，封装 `trackEvent(eventName, properties)` 函数，统一处理用户认证和事件插入，失败静默处理（不影响主流程）
+- ✅ 关键路径埋点：
+  - 识别流程：`recognize_attempt`（点按钮）→ `recognize_success`（成功）或 `recognize_failure`（失败），附带 category/species/error_code
+  - 保存流程：`save_record`（保存成功），附带 category/species
+  - 分享流程：`share_single`（单条分享，download/system）+ `share_collection`（图鉴分享，download/system）
+- ✅ 前端集成：在 NewEncounterPage、ShareModal、ShareCollectionModal 中插入埋点调用
+- ✅ 代码质量：`npm run lint`、`npm run build` 全部通过
+- ✅ 生产部署及验证：已部署至 Vercel，线上实测走完整流程，Supabase events 表成功记录 4 条事件数据
+- ✅ SQL 查询模板：提供识别成功率、保存转化率、分享率、事件统计等 4 个常用查询
+
 ✅ **v0.9「成就系统」已完成验收通过（2026-05-04）**
 - ✅ 前端成就规则：新增 `src/services/achievementRules.js`，覆盖猫色大师、夜行者、老朋友、跨城旅行家、记录狂人 5 个成就，按报告页时间窗口对过滤后的 records 纯前端重算
 - ✅ 服务层封装：新增 `src/services/achievementService.js`，统一返回成就定义、进度信息和新解锁对比结果
