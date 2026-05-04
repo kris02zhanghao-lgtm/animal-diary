@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { getRecords, deleteRecord } from '../services/supabaseService'
 import { getSpeciesStats } from '../services/collectionService'
+import ShareCollectionModal from '../components/ShareCollectionModal'
 
 function PhotoCard({ record, isSelected, isSelectMode, onLongPress, onToggleSelect, onExpand, formatDate }) {
   const longPressTimer = useRef(null)
@@ -77,6 +78,7 @@ function CollectionPage({ onExpandRecord }) {
   const [confirmingBatch, setConfirmingBatch] = useState(false)
   const [isDeletingBatch, setIsDeletingBatch] = useState(false)
   const [deleteError, setDeleteError] = useState(null)
+  const [showShareModal, setShowShareModal] = useState(false)
 
   function normalizeRecord(record) {
     return {
@@ -254,9 +256,23 @@ function CollectionPage({ onExpandRecord }) {
             </div>
           ) : (
             <div>
-              <h2 className="text-lg font-bold mb-6" style={{ color: 'var(--text-primary)' }}>
-                已发现{speciesStats.length}种物种
-              </h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
+                  已发现{speciesStats.length}种物种
+                </h2>
+                <button
+                  onClick={() => setShowShareModal(true)}
+                  className="px-3 py-1.5 rounded-xl text-sm font-bold"
+                  style={{
+                    color: '#5a4a3a',
+                    border: '2px solid #d4c9b8',
+                    background: '#fff8ee',
+                    boxShadow: '2px 2px 0 #d4c9b8',
+                  }}
+                >
+                  🌿 分享图鉴
+                </button>
+              </div>
 
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 {speciesStats.map((stat) => (
@@ -288,6 +304,11 @@ function CollectionPage({ onExpandRecord }) {
           )}
         </div>
       )}
+
+      <ShareCollectionModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+      />
 
       {/* 批量删除确认弹窗 */}
       {confirmingBatch && (

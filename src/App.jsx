@@ -7,6 +7,12 @@ const NewEncounterPage = lazy(() => import('./pages/NewEncounterPage'))
 const CollectionPage = lazy(() => import('./pages/CollectionPage'))
 const ReportPage = lazy(() => import('./pages/ReportPage'))
 const MapView = lazy(() => import('./components/MapView'))
+const PublicCollectionPage = lazy(() => import('./pages/PublicCollectionPage'))
+
+function getSharedToken() {
+  const match = window.location.pathname.match(/^\/shared\/([a-zA-Z0-9]+)$/)
+  return match ? match[1] : null
+}
 
 function PageFallback() {
   return (
@@ -22,11 +28,22 @@ function App() {
   const [authError, setAuthError] = useState(null)
   const [expandTargetId, setExpandTargetId] = useState(null)
 
+  const sharedToken = getSharedToken()
+
   useEffect(() => {
+    if (sharedToken) return
     ensureSession()
       .then(() => setAuthReady(true))
       .catch(() => setAuthError('无法建立会话，请刷新重试'))
-  }, [])
+  }, [sharedToken])
+
+  if (sharedToken) {
+    return (
+      <Suspense fallback={<PageFallback />}>
+        <PublicCollectionPage token={sharedToken} />
+      </Suspense>
+    )
+  }
 
   if (authError) {
     return (
