@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { saveRecord, confirmReturning } from '../services/supabaseService'
 import ReturningSuggestionModal from '../components/ReturningSuggestionModal'
 import SpeciesCorrectionSheet from '../components/SpeciesCorrectionSheet'
+import LocationPicker from '../components/LocationPicker'
 
 function compressImage(file, maxSize = 800) {
   return new Promise((resolve) => {
@@ -51,6 +52,7 @@ function NewEncounterPage({ onNavigate }) {
   const [suggestedScore, setSuggestedScore] = useState(null)
   const [savedRecord, setSavedRecord] = useState(null)
   const [showSpeciesCorrection, setShowSpeciesCorrection] = useState(false)
+  const [showLocationPicker, setShowLocationPicker] = useState(false)
 
   useEffect(() => {
     if (!navigator.geolocation) return
@@ -169,6 +171,16 @@ function NewEncounterPage({ onNavigate }) {
     onNavigate('list')
   }
 
+  const handleLocationConfirm = ({ location: nextLocation, latitude, longitude }) => {
+    setLocation(nextLocation)
+    setCoordinates({
+      lat: latitude ?? coordinates?.lat ?? null,
+      lng: longitude ?? coordinates?.lng ?? null,
+    })
+    setGeoStatus('success')
+    setShowLocationPicker(false)
+  }
+
   const formatDate = (date) => {
     const d = date || new Date()
     return `${d.getFullYear()}年${String(d.getMonth() + 1).padStart(2, '0')}月${String(d.getDate()).padStart(2, '0')}日`
@@ -276,40 +288,49 @@ function NewEncounterPage({ onNavigate }) {
           </div>
 
           {/* 标签行 */}
-          <div className="px-5 py-3 flex gap-3 flex-wrap" style={{ background: '#f5ede0', borderTop: '1px solid #e0d0b8' }}>
-            <div className="flex items-center gap-1">
+          <div
+            className="grid grid-cols-2 gap-3 px-5 py-3 items-center"
+            style={{ background: '#f5ede0', borderTop: '1px solid #e0d0b8' }}
+          >
+            <div className="flex items-center gap-1.5 min-w-0">
               <span className="text-base">🐾</span>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={species}
-                  onChange={(e) => {
-                    setSpecies(e.target.value)
-                    setCategory('')
-                    setSpeciesTag('')
-                  }}
-                  className="text-sm font-medium text-[#3d2b1a] bg-transparent border-none outline-none w-24"
-                  placeholder="动物种类"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowSpeciesCorrection(true)}
-                  className="rounded-full px-2.5 py-1 text-xs font-medium"
-                  style={{ background: '#ebe1cf', color: '#7a5c3a' }}
-                >
-                  修正
-                </button>
-              </div>
+              <input
+                type="text"
+                value={species}
+                onChange={(e) => {
+                  setSpecies(e.target.value)
+                  setCategory('')
+                  setSpeciesTag('')
+                }}
+                className="min-w-0 flex-1 text-sm font-medium text-[#3d2b1a] bg-transparent border-none outline-none"
+                placeholder="动物种类"
+              />
+              <button
+                type="button"
+                onClick={() => setShowSpeciesCorrection(true)}
+                className="shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-medium"
+                style={{ background: 'rgba(122, 92, 58, 0.08)', color: '#7a5c3a' }}
+              >
+                修正
+              </button>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5 min-w-0">
               <span className="text-base">📍</span>
               <input
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                className="text-sm text-[#5a4a3a] bg-transparent border-none outline-none w-28"
+                className="min-w-0 flex-1 text-sm text-[#5a4a3a] bg-transparent border-none outline-none"
                 placeholder="地点"
               />
+              <button
+                type="button"
+                onClick={() => setShowLocationPicker(true)}
+                className="shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-medium"
+                style={{ background: 'rgba(122, 92, 58, 0.08)', color: '#7a5c3a' }}
+              >
+                定位
+              </button>
             </div>
           </div>
           {/* 定位状态提示 */}
@@ -382,6 +403,13 @@ function NewEncounterPage({ onNavigate }) {
           setSpeciesTag(nextSpeciesTag)
         }}
       />
+
+      {showLocationPicker && (
+        <LocationPicker
+          onConfirm={handleLocationConfirm}
+          onClose={() => setShowLocationPicker(false)}
+        />
+      )}
     </div>
   )
 }
