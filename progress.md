@@ -274,8 +274,19 @@
 - ✅ **成就系统**：猫色大师、夜行者、老朋友、跨城旅行家、记录狂人；报告页成就区块、详情弹窗、解锁通知、物种修正交互、删除反馈补强全部完成并验收通过
 - [ ] **新用户引导**：第一次打开的欢迎流程（待后续迭代）
 
-### v0.9.1：分享图鉴
-- [ ] **分享整个图鉴**：公开链接，展示个人动物发现
+✅ **v0.9.1「分享图鉴」已完成验收（2026-05-04）**
+- ✅ 分享卡片生成：新增 `generateCollectionShareCard()` 在 `src/utils/shareUtils.js`，Canvas 生成 600x900px 图片卡片，包含 2x2 照片拼贴、物种统计、Top 3 标签
+- ✅ 后端 API：`api/share-collection.js` 支持 GET/POST/DELETE 操作，生成/读取/删除分享 token
+- ✅ 公开访问：`api/public-collection/[token].js` 使用 service role key 提供无需登录的公开数据访问
+- ✅ 前端 UI：新增 `ShareCollectionModal` 组件，支持分享卡片预览、下载、复制、系统分享
+- ✅ 图鉴页集成：`CollectionPage` 顶部新增"分享图鉴"轻量灰色文本链接，触发分享弹窗
+- ✅ 路由支持：`App.jsx` 检测 `/shared/:token` 路径，路由到 `PublicCollectionPage`（只读）
+- ✅ 公开页面：新增 `PublicCollectionPage`，展示他人分享的图鉴，两层导航结构，错误处理（404、空状态）
+- ✅ 数据库：新增 `collection_shares` 表（user_id、token、created_at），RLS 策略（用户只能管理自己的分享），性能索引
+- ✅ 产品决策：从链接分享转向卡片分享，对标微信/小红书等平台的原生内容形式
+- ✅ 浏览器验收：分享弹窗、卡片预览、下载、复制、公开页访问全部通过
+- ✅ 代码质量：`npm run lint` / `npm run build` 全部通过
+- ✅ 生产部署：Vercel 最新 Production deployment 已 Ready
 
 ### v1.0：数据驱动 + 技术深度
 - [ ] **数据埋点**：关键路径（识别成功率、保存转化、分享率、成就解锁率）
