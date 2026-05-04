@@ -262,15 +262,10 @@ function CollectionPage({ onExpandRecord }) {
                 </h2>
                 <button
                   onClick={() => setShowShareModal(true)}
-                  className="px-3 py-1.5 rounded-xl text-sm font-bold"
-                  style={{
-                    color: '#5a4a3a',
-                    border: '2px solid #d4c9b8',
-                    background: '#fff8ee',
-                    boxShadow: '2px 2px 0 #d4c9b8',
-                  }}
+                  className="text-xs"
+                  style={{ color: '#b8a898' }}
                 >
-                  🌿 分享图鉴
+                  分享图鉴
                 </button>
               </div>
 

@@ -71,10 +71,15 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, share: { ...existing, url: shareUrl } })
     }
 
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user) {
+      return sendError(res, 401, '身份验证失败', 'AUTH_FAILED')
+    }
+
     const newToken = generateToken()
     const { data, error } = await supabase
       .from('collection_shares')
-      .insert([{ token: newToken }])
+      .insert([{ token: newToken, user_id: user.id }])
       .select('token, created_at')
       .single()
 
