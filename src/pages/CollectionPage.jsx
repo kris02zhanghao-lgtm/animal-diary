@@ -303,6 +303,8 @@ function CollectionPage({ onExpandRecord }) {
       <ShareCollectionModal
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
+        speciesStats={speciesStats}
+        totalCount={records.length}
       />
 
       {/* 批量删除确认弹窗 */}

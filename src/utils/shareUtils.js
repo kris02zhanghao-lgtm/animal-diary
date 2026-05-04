@@ -73,6 +73,116 @@ function canvasToBlob(canvas) {
   })
 }
 
+export async function generateCollectionShareCard(speciesStats, totalCount) {
+  const canvas = document.createElement('canvas')
+  canvas.width = 600
+  canvas.height = 900
+  const ctx = canvas.getContext('2d')
+
+  if (!ctx) throw new Error('无法初始化画布')
+
+  // 背景
+  ctx.fillStyle = '#f9f0e6'
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+  const gradient = ctx.createLinearGradient(0, 0, 600, 900)
+  gradient.addColorStop(0, '#fff8ef')
+  gradient.addColorStop(0.5, '#f6ead4')
+  gradient.addColorStop(1, '#ebf4ea')
+  ctx.fillStyle = gradient
+  roundedRect(ctx, 22, 22, 556, 856, 34)
+  ctx.fill()
+
+  // 2x2 照片拼贴（最多4种）
+  const photos = speciesStats.slice(0, 4).map(s => s.latestPhoto).filter(Boolean)
+  const gridTop = 44
+  const gridLeft = 40
+  const cellW = 256
+  const cellH = 200
+  const gap = 8
+
+  if (photos.length > 0) {
+    const positions = [
+      [gridLeft, gridTop],
+      [gridLeft + cellW + gap, gridTop],
+      [gridLeft, gridTop + cellH + gap],
+      [gridLeft + cellW + gap, gridTop + cellH + gap],
+    ]
+    await Promise.all(
+      photos.map(async (src, i) => {
+        const [px, py] = positions[i]
+        const radius = i === 0 ? 24 : i === 1 ? 24 : i === 2 ? 24 : 24
+        ctx.save()
+        roundedRect(ctx, px, py, cellW, cellH, radius)
+        ctx.clip()
+        try {
+          const img = await loadImage(src)
+          const scale = Math.max(cellW / img.width, cellH / img.height)
+          const dw = img.width * scale
+          const dh = img.height * scale
+          ctx.drawImage(img, px + (cellW - dw) / 2, py + (cellH - dh) / 2, dw, dh)
+        } catch {
+          ctx.fillStyle = '#e8d8c0'
+          ctx.fillRect(px, py, cellW, cellH)
+        }
+        ctx.restore()
+      })
+    )
+  }
+
+  // 内容卡片区域
+  const cardTop = gridTop + (cellH * 2) + gap + 16
+  ctx.fillStyle = 'rgba(255, 250, 242, 0.88)'
+  roundedRect(ctx, 38, cardTop, 524, 900 - cardTop - 44, 28)
+  ctx.fill()
+
+  // 副标题
+  ctx.fillStyle = '#92785d'
+  ctx.font = '600 18px Nunito, "PingFang SC", sans-serif'
+  ctx.fillText('动物偶遇图鉴', 68, cardTop + 46)
+
+  // 主标题：已发现 X 种
+  const speciesCount = speciesStats.length
+  ctx.fillStyle = '#3d2b1a'
+  ctx.font = '700 44px Nunito, "PingFang SC", sans-serif'
+  ctx.fillText(`已发现 ${speciesCount} 种动物`, 68, cardTop + 106)
+
+  // 总次数
+  ctx.fillStyle = '#6f5a46'
+  ctx.font = '500 22px Nunito, "PingFang SC", sans-serif'
+  ctx.fillText(`共记录了 ${totalCount} 次偶遇`, 68, cardTop + 148)
+
+  // Top 3 物种标签
+  const topSpecies = speciesStats.slice(0, 3)
+  let tagX = 68
+  const tagY = cardTop + 196
+  topSpecies.forEach(s => {
+    const label = `${s.category} ×${s.count}`
+    ctx.font = '500 17px Nunito, "PingFang SC", sans-serif'
+    const tw = ctx.measureText(label).width
+    const padX = 14
+    const padY = 8
+    const tagW = tw + padX * 2
+    const tagH = 34
+
+    ctx.fillStyle = '#f0e4d0'
+    roundedRect(ctx, tagX, tagY - tagH + padY, tagW, tagH, 10)
+    ctx.fill()
+
+    ctx.fillStyle = '#7a5c3a'
+    ctx.fillText(label, tagX + padX, tagY + padY - 2)
+
+    tagX += tagW + 10
+  })
+
+  // 底部署名
+  ctx.fillStyle = '#9f927d'
+  ctx.font = '600 17px Nunito, "PingFang SC", sans-serif'
+  ctx.fillText('Animal Diary · 记录城市里每一次轻轻经过的生命', 68, 856)
+
+  return await canvasToBlob(canvas)
+}
+
 export async function generateShareCard(record) {
   try {
     const canvas = document.createElement('canvas')
