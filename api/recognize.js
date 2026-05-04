@@ -5,18 +5,7 @@ import {
   logInfo,
   sendError,
 } from './_lib/http.js'
-
-const SPECIES_TAG_DEFINITIONS = {
-  猫: ['橘猫', '奶牛猫', '狸花猫', '黑猫', '白猫', '三花猫', '玳瑁猫', '英短', '美短', '布偶猫', '波斯猫', '缅因猫', '暹罗猫', '折耳猫', '银渐层'],
-  狗: ['泰迪/贵宾', '博美', '比熊', '马尔济斯', '约克夏', '腊肠', '巴哥', '雪纳瑞', '柴犬', '柯基', '法斗', '英斗', '秋田', '金毛', '拉布拉多', '萨摩耶', '阿拉斯加', '哈士奇', '边牧', '中华田园犬', '其他犬种'],
-  鸟: ['麻雀', '鸽子', '乌鸦', '喜鹊', '鹦鹉', '白鹭', '野鸭', '猫头鹰', '燕子', '翠鸟', '孔雀', '火烈鸟', '鸵鸟', '丹顶鹤', '其他鸟类'],
-  哺乳动物: ['松鼠', '兔子', '刺猬', '浣熊', '仓鼠', '花栗鼠', '羊驼', '小熊猫', '水獭', '龙猫/栗鼠', '雪貂', '狐狸', '梅花鹿', '土拨鼠', '宠物猪'],
-  大型野生: ['大熊猫', '长颈鹿', '斑马', '亚洲象', '非洲象', '狮子', '老虎', '猎豹', '雪豹', '北极熊', '棕熊', '河马', '犀牛'],
-  灵长类: ['猕猴', '金丝猴', '黑猩猩', '猩猩', '大猩猩', '长臂猿'],
-  爬行水生: ['乌龟', '青蛙', '蜥蜴', '壁虎', '蛇', '鳄鱼', '企鹅', '海豚', '海豹', '海狮'],
-}
-
-const ALL_SPECIES_TAGS = Object.values(SPECIES_TAG_DEFINITIONS).flat().join('、')
+import { ALL_SPECIES_TAGS, normalizeAnimalClassification } from './_lib/animalClassification.js'
 
 export default async function handler(req, res) {
   const context = createRequestContext(req)
@@ -206,6 +195,10 @@ ${ALL_SPECIES_TAGS}
       }
       // fallback to defaults
     }
+
+    const normalizedClassification = normalizeAnimalClassification(result.species, category, speciesTag)
+    category = normalizedClassification.category
+    speciesTag = normalizedClassification.speciesTag
 
     const rawTitle = result.title || result.species
     const title = rawTitle.length > 15 ? rawTitle.slice(0, 15) : rawTitle

@@ -9,6 +9,7 @@ import {
   logInfo,
   sendError,
 } from './_lib/http.js'
+import { normalizeAnimalClassification } from './_lib/animalClassification.js'
 import { performDetectReturning } from './_lib/detectReturning.js'
 
 export default async function handler(req, res) {
@@ -51,6 +52,8 @@ export default async function handler(req, res) {
   })
 
   try {
+    const normalizedClassification = normalizeAnimalClassification(species, category, species_tag)
+
     const { data, error } = await supabase
       .from('records')
       .insert([
@@ -59,8 +62,8 @@ export default async function handler(req, res) {
           location: location || '城市某处',
           title: title || species,
           species,
-          category: category || '其他',
-          species_tag: species_tag || 'other-animal',
+          category: normalizedClassification.category,
+          species_tag: normalizedClassification.speciesTag,
           journal,
           latitude: latitude ?? null,
           longitude: longitude ?? null,

@@ -8,6 +8,7 @@ import {
   logInfo,
   sendError,
 } from './_lib/http.js'
+import { normalizeAnimalClassification } from './_lib/animalClassification.js'
 
 export default async function handler(req, res) {
   const context = createRequestContext(req)
@@ -44,9 +45,20 @@ export default async function handler(req, res) {
   })
 
   try {
+    const nextFields = { ...fields }
+    if (typeof nextFields.species === 'string' && nextFields.species.trim()) {
+      const normalizedClassification = normalizeAnimalClassification(
+        nextFields.species,
+        nextFields.category,
+        nextFields.species_tag
+      )
+      nextFields.category = normalizedClassification.category
+      nextFields.species_tag = normalizedClassification.speciesTag
+    }
+
     const { error } = await supabase
       .from('records')
-      .update(fields)
+      .update(nextFields)
       .eq('id', id)
 
     if (error) {
@@ -54,9 +66,9 @@ export default async function handler(req, res) {
       return sendError(res, 500, error.message || '更新失败，请重试', 'UPDATE_RECORD_FAILED')
     }
 
-    logInfo(context, 'update_record_succeeded', {
+      logInfo(context, 'update_record_succeeded', {
       recordId: id,
-      updatedFields: Object.keys(fields),
+      updatedFields: Object.keys(nextFields),
     })
     return res.status(200).json({ success: true })
   } catch (error) {

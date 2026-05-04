@@ -75,6 +75,8 @@ function CollectionPage({ onExpandRecord }) {
   const [isSelectMode, setIsSelectMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [confirmingBatch, setConfirmingBatch] = useState(false)
+  const [isDeletingBatch, setIsDeletingBatch] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
 
   function normalizeRecord(record) {
     return {
@@ -114,6 +116,7 @@ function CollectionPage({ onExpandRecord }) {
 
   const handleLongPress = (recordId) => {
     setIsSelectMode(true)
+    setDeleteError(null)
     const newSelected = new Set([recordId])
     setSelectedIds(newSelected)
   }
@@ -129,18 +132,28 @@ function CollectionPage({ onExpandRecord }) {
   }
 
   const handleBatchDelete = async () => {
-    for (const id of selectedIds) {
-      await deleteRecord(id)
-    }
-    const updated = await getRecords()
-    setRecords(updated.map(normalizeRecord))
-    setIsSelectMode(false)
-    setSelectedIds(new Set())
-    setConfirmingBatch(false)
+    setIsDeletingBatch(true)
+    setDeleteError(null)
 
-    const selectedCategoryData = speciesStats.find(s => s.category === selectedSpecies)
-    if (selectedCategoryData && selectedCategoryData.count <= selectedIds.size) {
-      setSelectedSpecies(null)
+    try {
+      for (const id of selectedIds) {
+        await deleteRecord(id)
+      }
+
+      const updated = await getRecords()
+      setRecords(updated.map(normalizeRecord))
+      setIsSelectMode(false)
+      setSelectedIds(new Set())
+      setConfirmingBatch(false)
+
+      const selectedCategoryData = speciesStats.find(s => s.category === selectedSpecies)
+      if (selectedCategoryData && selectedCategoryData.count <= selectedIds.size) {
+        setSelectedSpecies(null)
+      }
+    } catch (error) {
+      setDeleteError(error.message || '删除失败，请重试')
+    } finally {
+      setIsDeletingBatch(false)
     }
   }
 
@@ -181,12 +194,15 @@ function CollectionPage({ onExpandRecord }) {
                 >
                   取消
                 </button>
-                <button
-                  onClick={() => setConfirmingBatch(true)}
-                  className="px-3 py-2 rounded-lg text-sm font-bold text-white"
-                  style={{ background: '#c0392b', border: '1px solid #c0392b' }}
-                >
-                  删除
+              <button
+                onClick={() => {
+                  setDeleteError(null)
+                  setConfirmingBatch(true)
+                }}
+                className="px-3 py-2 rounded-lg text-sm font-bold text-white"
+                style={{ background: '#c0392b', border: '1px solid #c0392b' }}
+              >
+                删除
                 </button>
               </>
             ) : (
@@ -292,9 +308,18 @@ function CollectionPage({ onExpandRecord }) {
             <div className="text-3xl text-center mb-3">🐾</div>
             <p className="text-center font-bold text-gray-800 text-base mb-1">确认删除这{selectedIds.size}条偶遇记录？</p>
             <p className="text-center text-gray-500 text-sm mb-6">它们会永远离开你的图鉴...</p>
+            {deleteError && (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                <p className="text-sm text-red-600 text-center">{deleteError}</p>
+              </div>
+            )}
             <div className="flex gap-3">
               <button
-                onClick={() => setConfirmingBatch(false)}
+                onClick={() => {
+                  if (isDeletingBatch) return
+                  setConfirmingBatch(false)
+                }}
+                disabled={isDeletingBatch}
                 className="flex-1 py-3 rounded-xl font-bold text-[#5a4a3a]"
                 style={{ border: '3px solid #5a4a3a', boxShadow: '3px 3px 0px #5a4a3a', backgroundColor: '#fff8ee' }}
               >
@@ -302,10 +327,11 @@ function CollectionPage({ onExpandRecord }) {
               </button>
               <button
                 onClick={handleBatchDelete}
+                disabled={isDeletingBatch}
                 className="flex-1 py-3 rounded-xl font-bold text-white"
-                style={{ border: '3px solid #7a1a1a', boxShadow: '3px 3px 0px #7a1a1a', backgroundColor: '#c0392b' }}
+                style={{ border: '3px solid #7a1a1a', boxShadow: '3px 3px 0px #7a1a1a', backgroundColor: '#c0392b', opacity: isDeletingBatch ? 0.75 : 1 }}
               >
-                挥手道别
+                {isDeletingBatch ? '删除中...' : '挥手道别'}
               </button>
             </div>
           </div>

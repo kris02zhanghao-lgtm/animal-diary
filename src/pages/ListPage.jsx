@@ -7,6 +7,7 @@ import { getRecords, deleteRecord, updateRecord, detectReturning, confirmReturni
 import LocationPicker from '../components/LocationPicker'
 import ShareModal from '../components/ShareModal'
 import ReturningSuggestionModal from '../components/ReturningSuggestionModal'
+import SpeciesCorrectionSheet from '../components/SpeciesCorrectionSheet'
 
 function ListPage({ initialExpandedId = null }) {
   const [records, setRecords] = useState([])
@@ -21,6 +22,8 @@ function ListPage({ initialExpandedId = null }) {
   const [editingLocation, setEditingLocation] = useState('')
   const [editingLatitude, setEditingLatitude] = useState(null)
   const [editingLongitude, setEditingLongitude] = useState(null)
+  const [editingCategory, setEditingCategory] = useState('')
+  const [editingSpeciesTag, setEditingSpeciesTag] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [detailSaveError, setDetailSaveError] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
@@ -33,6 +36,9 @@ function ListPage({ initialExpandedId = null }) {
   const [suggestedNewRecordId, setSuggestedNewRecordId] = useState(null)
   const [prevRecord, setPrevRecord] = useState(null)
   const [navigatingToLinked, setNavigatingToLinked] = useState(false)
+  const [isDeletingRecord, setIsDeletingRecord] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
+  const [showSpeciesCorrection, setShowSpeciesCorrection] = useState(false)
   const menuRef = useRef(null)
 
   const expandedRecord = expandedId ? records.find(r => r.id === expandedId) : null
@@ -56,6 +62,8 @@ function ListPage({ initialExpandedId = null }) {
       setEditingLocation(expandedRecord.location || '')
       setEditingLatitude(expandedRecord.latitude || null)
       setEditingLongitude(expandedRecord.longitude || null)
+      setEditingCategory(expandedRecord.category || '')
+      setEditingSpeciesTag(expandedRecord.species_tag || '')
       setDetailSaveError(null)
       setIsEditing(false)
     }
@@ -168,6 +176,8 @@ function ListPage({ initialExpandedId = null }) {
       await updateRecord(expandedRecord.id, {
         title: editingTitle,
         species: editingSpecies,
+        category: editingCategory,
+        species_tag: editingSpeciesTag,
         journal: editingJournal,
         location: editingLocation,
         latitude: editingLatitude,
@@ -185,13 +195,22 @@ function ListPage({ initialExpandedId = null }) {
   }
 
   const handleDelete = async () => {
-    await deleteRecord(confirmingId)
-    const updated = await getRecords()
-    setRecords(updated.map(normalizeRecord))
-    setLoadError(null)
-    setConfirmingId(null)
-    setExpandedId(null)
-    setExpandingMenuId(null)
+    setIsDeletingRecord(true)
+    setDeleteError(null)
+
+    try {
+      await deleteRecord(confirmingId)
+      const updated = await getRecords()
+      setRecords(updated.map(normalizeRecord))
+      setLoadError(null)
+      setConfirmingId(null)
+      setExpandedId(null)
+      setExpandingMenuId(null)
+    } catch (error) {
+      setDeleteError(error.message || '删除记录失败')
+    } finally {
+      setIsDeletingRecord(false)
+    }
   }
 
   const handleOpenShare = (record) => {
@@ -253,6 +272,8 @@ function ListPage({ initialExpandedId = null }) {
                     setEditingLocation(expandedRecord.location || '')
                     setEditingLatitude(expandedRecord.latitude || null)
                     setEditingLongitude(expandedRecord.longitude || null)
+                    setEditingCategory(expandedRecord.category || '')
+                    setEditingSpeciesTag(expandedRecord.species_tag || '')
                     setDetailSaveError(null)
                   }}
                   className="text-sm px-3 py-1 rounded-full"
@@ -434,14 +455,28 @@ function ListPage({ initialExpandedId = null }) {
                 <div className="flex items-center gap-2">
                   <span>🐾</span>
                   {isEditing ? (
-                    <input
-                      type="text"
-                      value={editingSpecies}
-                      onChange={(e) => setEditingSpecies(e.target.value)}
-                      className="flex-1 font-bold px-3 py-1.5 rounded-lg focus:outline-none"
-                      style={{ background: '#f0e8d8', border: '1px solid #c9a97a', color: '#3d2b1a' }}
-                      placeholder="动物种类"
-                    />
+                    <div className="flex flex-1 items-center gap-2">
+                      <input
+                        type="text"
+                        value={editingSpecies}
+                        onChange={(e) => {
+                          setEditingSpecies(e.target.value)
+                          setEditingCategory('')
+                          setEditingSpeciesTag('')
+                        }}
+                        className="flex-1 font-bold px-3 py-1.5 rounded-lg focus:outline-none"
+                        style={{ background: '#f0e8d8', border: '1px solid #c9a97a', color: '#3d2b1a' }}
+                        placeholder="动物种类"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSpeciesCorrection(true)}
+                        className="rounded-full px-2.5 py-1 text-xs font-medium"
+                        style={{ background: '#ebe1cf', color: '#7a5c3a' }}
+                      >
+                        修正
+                      </button>
+                    </div>
                   ) : (
                     <span className="font-bold text-gray-800">{expandedRecord.species}</span>
                   )}
@@ -627,6 +662,7 @@ function ListPage({ initialExpandedId = null }) {
                             <button
                               onClick={() => {
                                 setConfirmingId(record.id)
+                                setDeleteError(null)
                                 setExpandingMenuId(null)
                               }}
                               className="block w-full text-left px-3 py-2 text-xs last:rounded-b-md"
@@ -693,9 +729,18 @@ function ListPage({ initialExpandedId = null }) {
             <div className="text-3xl text-center mb-3">🐾</div>
             <p className="text-center font-bold text-gray-800 text-base mb-1">确认删除这条偶遇记录？</p>
             <p className="text-center text-gray-500 text-sm mb-6">它会永远离开你的图鉴...</p>
+            {deleteError && (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                <p className="text-sm text-red-600 text-center">{deleteError}</p>
+              </div>
+            )}
             <div className="flex gap-3">
               <button
-                onClick={() => setConfirmingId(null)}
+                onClick={() => {
+                  if (isDeletingRecord) return
+                  setConfirmingId(null)
+                }}
+                disabled={isDeletingRecord}
                 className="flex-1 py-3 rounded-xl font-bold text-[#5a4a3a]"
                 style={{ border: '3px solid #5a4a3a', boxShadow: '3px 3px 0px #5a4a3a', backgroundColor: '#fff8ee' }}
               >
@@ -703,10 +748,11 @@ function ListPage({ initialExpandedId = null }) {
               </button>
               <button
                 onClick={handleDelete}
+                disabled={isDeletingRecord}
                 className="flex-1 py-3 rounded-xl font-bold text-white"
-                style={{ border: '3px solid #7a1a1a', boxShadow: '3px 3px 0px #7a1a1a', backgroundColor: '#c0392b' }}
+                style={{ border: '3px solid #7a1a1a', boxShadow: '3px 3px 0px #7a1a1a', backgroundColor: '#c0392b', opacity: isDeletingRecord ? 0.75 : 1 }}
               >
-                挥手道别
+                {isDeletingRecord ? '删除中...' : '挥手道别'}
               </button>
             </div>
           </div>
@@ -742,6 +788,19 @@ function ListPage({ initialExpandedId = null }) {
           }}
         />
       )}
+
+      <SpeciesCorrectionSheet
+        isOpen={showSpeciesCorrection}
+        onClose={() => setShowSpeciesCorrection(false)}
+        value={editingSpecies}
+        category={editingCategory}
+        speciesTag={editingSpeciesTag}
+        onApply={({ species: nextSpecies, category: nextCategory, speciesTag: nextSpeciesTag }) => {
+          setEditingSpecies(nextSpecies)
+          setEditingCategory(nextCategory)
+          setEditingSpeciesTag(nextSpeciesTag)
+        }}
+      />
     </div>
   )
 }

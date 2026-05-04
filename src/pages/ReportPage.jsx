@@ -1,11 +1,46 @@
 import { useEffect, useMemo, useState } from 'react'
 import { generateReport } from '../services/reportService'
 import { getAccessToken } from '../services/authService'
+import AchievementSection from '../components/AchievementSection'
+import AchievementModal from '../components/AchievementModal'
+import { compareAchievements, getAchievements } from '../services/achievementService'
 
 const timeRangeOptions = [
   { id: 'recent3months', label: '最近三个月' },
   { id: 'naturalYear', label: '今年' },
 ]
+const SEEN_ACHIEVEMENTS_STORAGE_KEY = 'animal-diary-seen-achievements'
+
+function readSeenAchievements() {
+  if (typeof window === 'undefined') return []
+
+  try {
+    const saved = window.localStorage.getItem(SEEN_ACHIEVEMENTS_STORAGE_KEY)
+    const parsed = saved ? JSON.parse(saved) : []
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+function persistSeenAchievements(ids) {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(SEEN_ACHIEVEMENTS_STORAGE_KEY, JSON.stringify(ids))
+}
+
+function appendUniqueItems(existingItems, newItems) {
+  const seen = new Set(existingItems)
+  const appended = [...existingItems]
+
+  newItems.forEach((item) => {
+    if (!seen.has(item)) {
+      seen.add(item)
+      appended.push(item)
+    }
+  })
+
+  return appended
+}
 
 function formatGeneratedTime(value) {
   return new Intl.DateTimeFormat('zh-CN', {
@@ -176,6 +211,13 @@ function ReportPage() {
   const [insights, setInsights] = useState([])
   const [insightsLoading, setInsightsLoading] = useState(false)
   const [insightsError, setInsightsError] = useState('')
+  const [achievements, setAchievements] = useState([])
+  const [unlockedAchievements, setUnlockedAchievements] = useState([])
+  const [selectedAchievementId, setSelectedAchievementId] = useState(null)
+  const [progressById, setProgressById] = useState({})
+  const [unlockQueue, setUnlockQueue] = useState([])
+  const [activeUnlockId, setActiveUnlockId] = useState(null)
+  const [seenUnlockedAchievements, setSeenUnlockedAchievements] = useState(readSeenAchievements)
 
   useEffect(() => {
     let cancelled = false
@@ -258,10 +300,59 @@ function ReportPage() {
     }
   }, [isLoading, report?.hasData, timeRange])
 
+  useEffect(() => {
+    if (isLoading || !report) return
+
+    const nextAchievementState = getAchievements(report.records || [])
+    setAchievements(nextAchievementState.achievements)
+    setUnlockedAchievements(nextAchievementState.unlockedIds)
+    setProgressById(nextAchievementState.progressById)
+
+    const nextSeenAchievements = appendUniqueItems(
+      seenUnlockedAchievements,
+      nextAchievementState.unlockedIds
+    )
+
+    if (seenUnlockedAchievements.length > 0) {
+      const newlyUnlocked = compareAchievements(
+        seenUnlockedAchievements,
+        nextAchievementState.unlockedIds
+      )
+
+      if (newlyUnlocked.length > 0) {
+        setUnlockQueue((currentQueue) => appendUniqueItems(currentQueue, newlyUnlocked))
+      }
+    }
+
+    if (nextSeenAchievements.length !== seenUnlockedAchievements.length) {
+      setSeenUnlockedAchievements(nextSeenAchievements)
+      persistSeenAchievements(nextSeenAchievements)
+    }
+  }, [isLoading, report, seenUnlockedAchievements])
+
+  useEffect(() => {
+    if (activeUnlockId || unlockQueue.length === 0) return
+
+    setActiveUnlockId(unlockQueue[0])
+    setUnlockQueue((currentQueue) => currentQueue.slice(1))
+  }, [activeUnlockId, unlockQueue])
+
+  useEffect(() => {
+    if (!activeUnlockId) return undefined
+
+    const timer = window.setTimeout(() => {
+      setActiveUnlockId(null)
+    }, 3000)
+
+    return () => window.clearTimeout(timer)
+  }, [activeUnlockId])
+
   const heroText = useMemo(() => {
     if (!report) return ''
     return `你${periodLabel(timeRange)}遇见了 ${report.total} 次动物`
   }, [report, timeRange])
+  const selectedAchievement = achievements.find((achievement) => achievement.id === selectedAchievementId) || null
+  const activeUnlockAchievement = achievements.find((achievement) => achievement.id === activeUnlockId) || null
 
   return (
     <div className="min-h-screen px-4 pt-6 pb-24 bg-[#fffdf7]">
@@ -319,14 +410,23 @@ function ReportPage() {
             <p className="text-sm text-red-600">{error}</p>
           </div>
         ) : report?.status === 'empty' ? (
-          <div
-            className="rounded-[24px] px-5 py-10 text-center"
-            style={{ background: 'rgb(247, 243, 223)', boxShadow: '0 4px 10px rgba(107, 92, 67, 0.18)' }}
-          >
-            <div className="text-5xl mb-4">🐾</div>
-            <p className="text-lg font-bold text-[#5a4a3a] mb-2">还没有偶遇呢</p>
-            <p className="text-sm leading-6 text-[#9f927d]">去记录你的第一次发现吧 🐾</p>
-          </div>
+          <>
+            <div
+              className="rounded-[24px] px-5 py-10 text-center"
+              style={{ background: 'rgb(247, 243, 223)', boxShadow: '0 4px 10px rgba(107, 92, 67, 0.18)' }}
+            >
+              <div className="text-5xl mb-4">🐾</div>
+              <p className="text-lg font-bold text-[#5a4a3a] mb-2">还没有偶遇呢</p>
+              <p className="text-sm leading-6 text-[#9f927d]">去记录你的第一次发现吧 🐾</p>
+            </div>
+
+            <AchievementSection
+              achievements={achievements}
+              unlockedIds={unlockedAchievements}
+              progressById={progressById}
+              onBadgeClick={setSelectedAchievementId}
+            />
+          </>
         ) : report?.status === 'sparse' ? (
           <>
             <div
@@ -337,6 +437,13 @@ function ReportPage() {
               <p className="text-lg font-bold text-[#5a4a3a] mb-2">偶遇正在冒头</p>
               <p className="text-sm leading-6 text-[#9f927d]">{getGrowingHint(report)}</p>
             </div>
+
+            <AchievementSection
+              achievements={achievements}
+              unlockedIds={unlockedAchievements}
+              progressById={progressById}
+              onBadgeClick={setSelectedAchievementId}
+            />
 
             <InsightsSection
               insights={insights}
@@ -408,6 +515,13 @@ function ReportPage() {
               </StatCard>
             )}
 
+            <AchievementSection
+              achievements={achievements}
+              unlockedIds={unlockedAchievements}
+              progressById={progressById}
+              onBadgeClick={setSelectedAchievementId}
+            />
+
             <InsightsSection
               insights={insights}
               insightsLoading={insightsLoading}
@@ -420,6 +534,26 @@ function ReportPage() {
           </>
         ) : null}
       </div>
+
+      <AchievementModal
+        achievement={selectedAchievement}
+        isOpen={Boolean(selectedAchievement)}
+        progress={selectedAchievement ? progressById[selectedAchievement.id] : null}
+        onClose={() => setSelectedAchievementId(null)}
+      />
+
+      <AchievementModal
+        achievement={activeUnlockAchievement}
+        isOpen={Boolean(activeUnlockAchievement)}
+        progress={activeUnlockAchievement ? progressById[activeUnlockAchievement.id] : null}
+        mode="unlock"
+        onClose={() => setActiveUnlockId(null)}
+        onViewDetails={() => {
+          if (!activeUnlockAchievement) return
+          setActiveUnlockId(null)
+          setSelectedAchievementId(activeUnlockAchievement.id)
+        }}
+      />
     </div>
   )
 }

@@ -10,6 +10,7 @@ function normalizeRecord(record) {
   return {
     ...record,
     createdAt: record.created_at ?? record.createdAt,
+    speciesTag: record.species_tag ?? record.speciesTag ?? '',
     location: record.location?.trim() || '未填写地点',
     species: record.species?.trim() || '未命名动物',
   }
@@ -54,5 +55,6 @@ export async function generateReport(timeRange) {
     startDate,
     endDate,
     generatedAt: new Date().toISOString(),
+    records: filteredRecords,
   }
 }

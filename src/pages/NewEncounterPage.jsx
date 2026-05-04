@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { saveRecord, confirmReturning } from '../services/supabaseService'
 import ReturningSuggestionModal from '../components/ReturningSuggestionModal'
+import SpeciesCorrectionSheet from '../components/SpeciesCorrectionSheet'
 
 function compressImage(file, maxSize = 800) {
   return new Promise((resolve) => {
@@ -49,6 +50,7 @@ function NewEncounterPage({ onNavigate }) {
   const [suggestedRecord, setSuggestedRecord] = useState(null)
   const [suggestedScore, setSuggestedScore] = useState(null)
   const [savedRecord, setSavedRecord] = useState(null)
+  const [showSpeciesCorrection, setShowSpeciesCorrection] = useState(false)
 
   useEffect(() => {
     if (!navigator.geolocation) return
@@ -277,13 +279,27 @@ function NewEncounterPage({ onNavigate }) {
           <div className="px-5 py-3 flex gap-3 flex-wrap" style={{ background: '#f5ede0', borderTop: '1px solid #e0d0b8' }}>
             <div className="flex items-center gap-1">
               <span className="text-base">🐾</span>
-              <input
-                type="text"
-                value={species}
-                onChange={(e) => setSpecies(e.target.value)}
-                className="text-sm font-medium text-[#3d2b1a] bg-transparent border-none outline-none w-24"
-                placeholder="动物种类"
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={species}
+                  onChange={(e) => {
+                    setSpecies(e.target.value)
+                    setCategory('')
+                    setSpeciesTag('')
+                  }}
+                  className="text-sm font-medium text-[#3d2b1a] bg-transparent border-none outline-none w-24"
+                  placeholder="动物种类"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSpeciesCorrection(true)}
+                  className="rounded-full px-2.5 py-1 text-xs font-medium"
+                  style={{ background: '#ebe1cf', color: '#7a5c3a' }}
+                >
+                  修正
+                </button>
+              </div>
             </div>
             <div className="flex items-center gap-1">
               <span className="text-base">📍</span>
@@ -353,6 +369,19 @@ function NewEncounterPage({ onNavigate }) {
           onDismiss={handleDismissReturning}
         />
       )}
+
+      <SpeciesCorrectionSheet
+        isOpen={showSpeciesCorrection}
+        onClose={() => setShowSpeciesCorrection(false)}
+        value={species}
+        category={category}
+        speciesTag={speciesTag}
+        onApply={({ species: nextSpecies, category: nextCategory, speciesTag: nextSpeciesTag }) => {
+          setSpecies(nextSpecies)
+          setCategory(nextCategory)
+          setSpeciesTag(nextSpeciesTag)
+        }}
+      />
     </div>
   )
 }
