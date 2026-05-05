@@ -9,8 +9,38 @@ import ShareModal from '../components/ShareModal'
 import ReturningSuggestionModal from '../components/ReturningSuggestionModal'
 import SpeciesCorrectionSheet from '../components/SpeciesCorrectionSheet'
 
-function ListPage({ initialExpandedId = null }) {
+function TimelineSkeleton() {
+  return (
+    <div className="space-y-12 pb-24 animate-pulse">
+      {[0, 1].map((groupIndex) => (
+        <div key={groupIndex} className="pb-16">
+          <div className="h-6 w-28 rounded-full mb-4 bg-[#eadfcb]" />
+          <div className="flex gap-4 overflow-hidden">
+            {[0, 1].map((cardIndex) => (
+              <div
+                key={cardIndex}
+                className="w-64 shrink-0 rounded-2xl overflow-hidden"
+                style={{ background: 'rgb(247, 243, 223)', boxShadow: '0 4px 10px rgba(107, 92, 67, 0.18)' }}
+              >
+                <div className="h-64 bg-[#eadfcb]" />
+                <div className="p-3 space-y-2">
+                  <div className="h-4 w-24 rounded-full bg-[#eadfcb]" />
+                  <div className="h-3 w-20 rounded-full bg-[#f0e8d8]" />
+                  <div className="h-3 w-16 rounded-full bg-[#f0e8d8]" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function ListPage({ initialExpandedId = null, isActive = false }) {
   const [records, setRecords] = useState([])
+  const [isLoadingRecords, setIsLoadingRecords] = useState(true)
+  const [hasLoadedRecordsOnce, setHasLoadedRecordsOnce] = useState(false)
   const [confirmingId, setConfirmingId] = useState(null)
   const [expandedId, setExpandedId] = useState(initialExpandedId)
   const [expandingMenuId, setExpandingMenuId] = useState(null)
@@ -40,19 +70,52 @@ function ListPage({ initialExpandedId = null }) {
   const [deleteError, setDeleteError] = useState(null)
   const [showSpeciesCorrection, setShowSpeciesCorrection] = useState(false)
   const menuRef = useRef(null)
+  const prevIsActiveRef = useRef(isActive)
 
   const expandedRecord = expandedId ? records.find(r => r.id === expandedId) : null
 
   useEffect(() => {
-    getRecords()
-      .then((data) => {
+    let ignore = false
+
+    const loadRecords = async ({ showSkeleton }) => {
+      if (showSkeleton) {
+        setIsLoadingRecords(true)
+      }
+
+      try {
+        const data = await getRecords()
+        if (ignore) return
         setRecords(data.map(normalizeRecord))
         setLoadError(null)
-      })
-      .catch(() => {
+      } catch {
+        if (ignore) return
         setLoadError('加载记录失败，请刷新重试')
-      })
-  }, [])
+      } finally {
+        if (!ignore) {
+          setIsLoadingRecords(false)
+          setHasLoadedRecordsOnce(true)
+        }
+      }
+    }
+
+    if (!hasLoadedRecordsOnce) {
+      loadRecords({ showSkeleton: true })
+    } else if (isActive && !prevIsActiveRef.current) {
+      loadRecords({ showSkeleton: false })
+    }
+
+    prevIsActiveRef.current = isActive
+
+    return () => {
+      ignore = true
+    }
+  }, [hasLoadedRecordsOnce, isActive])
+
+  useEffect(() => {
+    if (initialExpandedId) {
+      setExpandedId(initialExpandedId)
+    }
+  }, [initialExpandedId])
 
   useEffect(() => {
     if (expandedRecord) {
@@ -567,6 +630,8 @@ function ListPage({ initialExpandedId = null }) {
             </div>
           </div>
         </div>
+      ) : !hasLoadedRecordsOnce && isLoadingRecords ? (
+        <TimelineSkeleton />
       ) : records.length === 0 ? (
         /* 空状态 */
         <div className="flex flex-col items-center justify-center min-h-[70vh]">

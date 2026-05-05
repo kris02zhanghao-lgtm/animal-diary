@@ -63,7 +63,9 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#fffdf7] overflow-x-hidden">
-      {activePage === 'timeline' && <ListPage initialExpandedId={expandTargetId} />}
+      <div className={activePage === 'timeline' ? 'block' : 'hidden'}>
+        <ListPage initialExpandedId={expandTargetId} isActive={activePage === 'timeline'} />
+      </div>
       <Suspense fallback={<PageFallback />}>
         {activePage === 'map' && (
           <MapView onExpandRecord={(record) => {
