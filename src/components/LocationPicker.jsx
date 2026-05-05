@@ -1,30 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-
-const AMAP_KEY = import.meta.env.VITE_AMAP_KEY
-
-function loadAmapScript() {
-  return new Promise((resolve, reject) => {
-    if (window.AMap) { resolve(); return }
-    const existing = document.querySelector('script[data-amap]')
-    if (existing) {
-      existing.addEventListener('load', resolve)
-      existing.addEventListener('error', reject)
-      return
-    }
-    const script = document.createElement('script')
-    script.src = `https://webapi.amap.com/maps?v=2.0&key=${AMAP_KEY}`
-    script.setAttribute('data-amap', '1')
-    script.onload = resolve
-    script.onerror = reject
-    document.head.appendChild(script)
-  })
-}
-
-function loadAmapPlugins() {
-  return new Promise((resolve) => {
-    window.AMap.plugin(['AMap.Geocoder', 'AMap.PlaceSearch'], resolve)
-  })
-}
+import { loadAmapPlugins, reverseGeocode } from '../services/amapService'
 
 function LocationPicker({ onConfirm, onClose }) {
   const [activeTab, setActiveTab] = useState('gps')
@@ -37,8 +12,7 @@ function LocationPicker({ onConfirm, onClose }) {
   const debounceRef = useRef(null)
 
   useEffect(() => {
-    loadAmapScript()
-      .then(loadAmapPlugins)
+    loadAmapPlugins()
       .then(() => setAmapReady(true))
       .catch(() => {})
   }, [])
@@ -54,23 +28,21 @@ function LocationPicker({ onConfirm, onClose }) {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude } = pos.coords
-        if (!amapReady || !window.AMap?.Geocoder) {
+        if (!amapReady) {
           setPendingLocation({ location: '已定位', latitude, longitude })
           setGpsStatus('success')
           return
         }
-        const geocoder = new window.AMap.Geocoder({ radius: 500 })
-        geocoder.getAddress([longitude, latitude], (status, result) => {
-          let locationText = '已定位'
-          if (status === 'complete' && result.regeocode) {
-            const addr = result.regeocode.addressComponent
-            const district = addr.district || ''
-            const street = addr.township || addr.street || ''
-            locationText = (district + street).trim() || result.regeocode.formattedAddress?.slice(0, 15) || '已定位'
-          }
-          setPendingLocation({ location: locationText, latitude, longitude })
-          setGpsStatus('success')
-        })
+
+        reverseGeocode(latitude, longitude)
+          .then((locationText) => {
+            setPendingLocation({ location: locationText, latitude, longitude })
+            setGpsStatus('success')
+          })
+          .catch(() => {
+            setPendingLocation({ location: '已定位', latitude, longitude })
+            setGpsStatus('success')
+          })
       },
       (err) => {
         setGpsStatus(err.code === 1 ? 'denied' : 'unavailable')

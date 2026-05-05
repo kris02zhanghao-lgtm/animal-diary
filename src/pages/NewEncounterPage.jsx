@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { saveRecord, confirmReturning } from '../services/supabaseService'
 import { trackEvent } from '../services/analyticsService'
+import { reverseGeocode } from '../services/amapService'
 import ReturningSuggestionModal from '../components/ReturningSuggestionModal'
 import EncounterResultCard from '../components/EncounterResultCard'
 import SpeciesCorrectionSheet from '../components/SpeciesCorrectionSheet'
@@ -56,14 +57,33 @@ function NewEncounterPage({ onNavigate }) {
   const [savedRecord, setSavedRecord] = useState(null)
   const [showSpeciesCorrection, setShowSpeciesCorrection] = useState(false)
   const [showLocationPicker, setShowLocationPicker] = useState(false)
+  const hasManualLocationInputRef = useRef(false)
+  const locationRef = useRef(location)
+
+  useEffect(() => {
+    locationRef.current = location
+  }, [location])
 
   useEffect(() => {
     if (!navigator.geolocation) return
     setGeoStatus('loading')
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setCoordinates({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+      async (pos) => {
+        const latitude = pos.coords.latitude
+        const longitude = pos.coords.longitude
+        setCoordinates({ lat: latitude, lng: longitude })
         setGeoStatus('success')
+
+        if (hasManualLocationInputRef.current || locationRef.current.trim()) return
+
+        try {
+          const nextLocation = await reverseGeocode(latitude, longitude)
+          if (!hasManualLocationInputRef.current && !locationRef.current.trim()) {
+            setLocation(nextLocation)
+          }
+        } catch {
+          // Keep the current text input empty if reverse geocoding fails.
+        }
       },
       (err) => {
         setGeoStatus(err.code === 1 ? 'denied' : 'unavailable')
@@ -205,6 +225,7 @@ function NewEncounterPage({ onNavigate }) {
   }
 
   const handleLocationConfirm = ({ location: nextLocation, latitude, longitude }) => {
+    hasManualLocationInputRef.current = true
     setLocation(nextLocation)
     setCoordinates({
       lat: latitude ?? coordinates?.lat ?? null,
@@ -299,7 +320,10 @@ function NewEncounterPage({ onNavigate }) {
             setSpeciesTag('')
           }}
           location={location}
-          onLocationChange={setLocation}
+          onLocationChange={(nextLocation) => {
+            hasManualLocationInputRef.current = true
+            setLocation(nextLocation)
+          }}
           onOpenSpeciesCorrection={() => setShowSpeciesCorrection(true)}
           onOpenLocationPicker={() => setShowLocationPicker(true)}
           geoStatus={geoStatus}
