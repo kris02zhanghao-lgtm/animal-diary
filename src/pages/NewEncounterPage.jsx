@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { saveRecord, confirmReturning } from '../services/supabaseService'
 import { trackEvent } from '../services/analyticsService'
 import ReturningSuggestionModal from '../components/ReturningSuggestionModal'
+import EncounterResultCard from '../components/EncounterResultCard'
 import SpeciesCorrectionSheet from '../components/SpeciesCorrectionSheet'
 import LocationPicker from '../components/LocationPicker'
 
@@ -45,7 +46,8 @@ function NewEncounterPage({ onNavigate }) {
   const [speciesTag, setSpeciesTag] = useState('')
   const [journal, setJournal] = useState('')
   const [recognizedAt, setRecognizedAt] = useState(null)
-  const [error, setError] = useState(null)
+  const [recognitionFailed, setRecognitionFailed] = useState(false)
+  const [recognitionError, setRecognitionError] = useState(null)
   const [saveError, setSaveError] = useState(null)
   const [geoStatus, setGeoStatus] = useState('idle')
   const [coordinates, setCoordinates] = useState(null)
@@ -75,8 +77,15 @@ function NewEncounterPage({ onNavigate }) {
     if (file) {
       const compressed = await compressImage(file)
       setSelectedImage(compressed)
+      setTitle('')
+      setSpecies('')
+      setCategory('')
+      setSpeciesTag('')
+      setJournal('')
       setRecognizedAt(null)
-      setError(null)
+      setRecognitionFailed(false)
+      setRecognitionError(null)
+      setSaveError(null)
     }
   }
 
@@ -84,7 +93,8 @@ function NewEncounterPage({ onNavigate }) {
     if (!selectedImage) return
 
     setIsLoading(true)
-    setError(null)
+    setRecognitionFailed(false)
+    setRecognitionError(null)
     setSaveError(null)
 
     trackEvent('recognize_attempt')
@@ -109,18 +119,33 @@ function NewEncounterPage({ onNavigate }) {
         setSpeciesTag(result.speciesTag || 'other-animal')
         setJournal(result.journal)
         setRecognizedAt(new Date())
+        setRecognitionFailed(false)
         trackEvent('recognize_success', { category: result.category, species: result.species })
       } else {
-        setError(result?.error || '识别失败，请重试')
+        setTitle('')
+        setSpecies('')
+        setCategory('')
+        setSpeciesTag('')
+        setJournal('')
+        setRecognizedAt(new Date())
+        setRecognitionFailed(true)
+        setRecognitionError(result?.error || 'AI识别失败，请手动补充')
         trackEvent('recognize_failure', { error_code: result?.code || 'unknown' })
       }
     } catch (e) {
       clearTimeout(timeoutId)
+      setTitle('')
+      setSpecies('')
+      setCategory('')
+      setSpeciesTag('')
+      setJournal('')
+      setRecognizedAt(new Date())
+      setRecognitionFailed(true)
       if (e.name === 'AbortError') {
-        setError('识别超时（30秒），请重试')
+        setRecognitionError('识别超时（30秒），请手动补充或重试')
         trackEvent('recognize_failure', { error_code: 'timeout' })
       } else {
-        setError('网络错误，请检查连接后重试')
+        setRecognitionError('网络错误，请检查连接后手动补充或重试')
         trackEvent('recognize_failure', { error_code: 'network_error' })
       }
     } finally {
@@ -196,7 +221,7 @@ function NewEncounterPage({ onNavigate }) {
 
   const generateButtonLabel = isLoading
     ? '识别中...'
-    : recognizedAt !== null
+    : recognizedAt !== null || recognitionFailed
     ? '重新生成'
     : '✨ AI 帮我生成档案'
 
@@ -260,109 +285,35 @@ function NewEncounterPage({ onNavigate }) {
           {generateButtonLabel}
         </button>
 
+        {/* 偶遇档案卡片 */}
+        <EncounterResultCard
+          title={title}
+          onTitleChange={setTitle}
+          recognizedAt={recognizedAt}
+          journal={journal}
+          onJournalChange={setJournal}
+          species={species}
+          onSpeciesChange={(nextSpecies) => {
+            setSpecies(nextSpecies)
+            setCategory('')
+            setSpeciesTag('')
+          }}
+          location={location}
+          onLocationChange={setLocation}
+          onOpenSpeciesCorrection={() => setShowSpeciesCorrection(true)}
+          onOpenLocationPicker={() => setShowLocationPicker(true)}
+          geoStatus={geoStatus}
+          formatDate={formatDate}
+          isFailed={recognitionFailed}
+        />
+
         {/* AI 识别错误提示 */}
-        {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-600">{error}</p>
+        {recognitionError && (
+          <div className="px-1">
+            <p className="text-sm text-red-600">❌ AI识别失败，请手动补充</p>
+            <p className="mt-1 text-xs text-red-500">{recognitionError}</p>
           </div>
         )}
-
-        {/* 偶遇档案卡片 */}
-        <div
-          className="rounded-2xl overflow-hidden"
-          style={{ background: 'rgb(247, 243, 223)', boxShadow: '0 4px 10px rgba(107, 92, 67, 0.42)' }}
-        >
-          {/* 标题区 */}
-          <div className="px-5 pt-5 pb-4" style={{ background: 'linear-gradient(135deg, #f5e6c8 0%, #ede0c4 100%)' }}>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="给这次偶遇起个名字..."
-              className="w-full text-xl font-bold text-[#3d2b1a] bg-transparent border-none outline-none placeholder-[#a08060]"
-            />
-            <p className="text-xs text-[#a08060] mt-1">{formatDate(recognizedAt)}</p>
-          </div>
-
-          {/* 日志内容区 */}
-          <div className="px-5 py-4 bg-[#fffdf7]">
-            <textarea
-              value={journal}
-              onChange={(e) => setJournal(e.target.value)}
-              rows={5}
-              placeholder="记录这次偶遇的故事，或点击上方按钮让 AI 帮你生成..."
-              className="w-full text-[#3d2b1a] text-sm leading-relaxed bg-transparent border-none outline-none resize-none placeholder-[#c4b49a]"
-            />
-          </div>
-
-          {/* 标签行 */}
-          <div
-            className="grid grid-cols-2 gap-3 px-5 py-3 items-center"
-            style={{ background: '#f5ede0', borderTop: '1px solid #e0d0b8' }}
-          >
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-base">🐾</span>
-              <input
-                type="text"
-                value={species}
-                onChange={(e) => {
-                  setSpecies(e.target.value)
-                  setCategory('')
-                  setSpeciesTag('')
-                }}
-                className="min-w-0 flex-1 text-sm font-medium text-[#3d2b1a] bg-transparent border-none outline-none"
-                placeholder="动物种类"
-              />
-              <button
-                type="button"
-                onClick={() => setShowSpeciesCorrection(true)}
-                className="shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-medium"
-                style={{ background: 'rgba(122, 92, 58, 0.08)', color: '#7a5c3a' }}
-              >
-                修正
-              </button>
-            </div>
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-base">📍</span>
-              <input
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="min-w-0 flex-1 text-sm text-[#5a4a3a] bg-transparent border-none outline-none"
-                placeholder="地点"
-              />
-              <button
-                type="button"
-                onClick={() => setShowLocationPicker(true)}
-                className="shrink-0 rounded-full px-1.5 py-0.5 text-[11px] font-medium"
-                style={{ background: 'rgba(122, 92, 58, 0.08)', color: '#7a5c3a' }}
-              >
-                定位
-              </button>
-            </div>
-          </div>
-          {/* 定位状态提示 */}
-          {geoStatus === 'loading' && (
-            <div className="px-5 pb-3" style={{ background: '#f5ede0' }}>
-              <span className="text-xs text-[#a08060]">定位中...</span>
-            </div>
-          )}
-          {geoStatus === 'success' && (
-            <div className="px-5 pb-3" style={{ background: '#f5ede0' }}>
-              <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: '#e8d9c0', color: '#7a5c3a' }}>📍 已自动定位</span>
-            </div>
-          )}
-          {geoStatus === 'denied' && (
-            <div className="px-5 pb-3" style={{ background: '#f5ede0' }}>
-              <span className="text-xs text-[#b0a090]">位置权限已拒绝，请手动输入</span>
-            </div>
-          )}
-          {geoStatus === 'unavailable' && (
-            <div className="px-5 pb-3" style={{ background: '#f5ede0' }}>
-              <span className="text-xs text-[#b0a090]">定位暂不可用，请手动输入（手机端效果更好）</span>
-            </div>
-          )}
-        </div>
 
         {/* 操作按钮 */}
         <div className="flex gap-3">

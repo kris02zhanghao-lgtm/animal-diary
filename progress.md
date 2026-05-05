@@ -1,6 +1,15 @@
 # 项目进度
 
 ## 当前状态
+🚧 **v1.0「AI 识别失败兜底」已完成开发和代码验收，待浏览器实测（2026-05-05）**
+- ✅ 失败状态兜底：`src/pages/NewEncounterPage.jsx` 新增 `recognitionFailed` / `recognitionError`，AI 识别失败、超时、网络异常时不再卡死，保留可编辑卡片继续填写
+- ✅ 卡片组件拆分：新增 `src/components/EncounterResultCard.jsx`，统一承接标题、日志、物种、地点编辑与定位状态展示，支持 `isFailed` 失败态样式
+- ✅ 失败提示调整：失败卡片底部新增轻量提示 `❌ AI识别失败，请手动补充`，并附带具体失败原因，不再用阻挡式错误框
+- ✅ 保存链路保持可用：失败态下用户手填 `species` 后仍可走原有 `saveRecord` 流程，提交 title/species/location/journal/category/species_tag 等字段
+- ✅ 重新生成优化：再次点击「重新生成」会先清空旧失败态，成功后恢复 AI 返回内容，失败则继续保留手动补充入口
+- ✅ 代码质量：`npm run lint`、`npm run build` 通过
+- ⏳ 待补浏览器验收：需在离线 / 超时场景下手测失败卡片展示、手填保存、恢复网络后二次识别覆盖逻辑
+
 🚧 **v1.0「数据埋点」已完成开发和线上验证（2026-05-04）**
 - ✅ 数据库设计：新增 `events` 表（Supabase 迁移文件）用于记录用户行为事件，含 id/user_id/event_name/properties/created_at，RLS 保证用户数据隔离
 - ✅ 埋点服务封装：新增 `src/services/analyticsService.js`，封装 `trackEvent(eventName, properties)` 函数，统一处理用户认证和事件插入，失败静默处理（不影响主流程）
