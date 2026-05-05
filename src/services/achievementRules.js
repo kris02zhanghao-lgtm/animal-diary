@@ -2,6 +2,7 @@
  * @typedef {Object} AchievementRecord
  * @property {string} [speciesTag]
  * @property {string} [species_tag]
+ * @property {string} [species]
  * @property {string} [location]
  * @property {string} [createdAt]
  * @property {string} [created_at]
@@ -50,6 +51,7 @@ function normalizeRecords(records = []) {
     .filter(Boolean)
     .map((record) => ({
       ...record,
+      species: String(record.species ?? '').trim(),
       speciesTag: String(record.speciesTag ?? record.species_tag ?? '').trim(),
       location: String(record.location ?? '').trim(),
       createdAt: record.createdAt ?? record.created_at ?? '',
@@ -85,6 +87,10 @@ function isCatSpecies(speciesTag) {
   return /猫/.test(speciesTag)
 }
 
+function normalizeCatSpeciesName(species) {
+  return String(species).trim()
+}
+
 export function extractCity(location = '') {
   const trimmed = String(location).trim()
   if (!trimmed) return ''
@@ -111,8 +117,10 @@ export function checkCatColorMaster(records) {
 
   for (const record of normalized) {
     if (!isCatSpecies(record.speciesTag)) continue
+    const catSpeciesName = normalizeCatSpeciesName(record.species)
+    if (!catSpeciesName) continue
     const beforeSize = seenCats.size
-    seenCats.add(record.speciesTag)
+    seenCats.add(catSpeciesName)
     if (!unlockedAt && beforeSize < 5 && seenCats.size >= 5) {
       unlockedAt = record.createdAt
     }
