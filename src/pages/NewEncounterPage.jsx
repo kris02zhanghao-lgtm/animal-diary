@@ -4,6 +4,7 @@ import { trackEvent } from '../services/analyticsService'
 import { reverseGeocode } from '../services/amapService'
 import ReturningSuggestionModal from '../components/ReturningSuggestionModal'
 import EncounterResultCard from '../components/EncounterResultCard'
+import ShareModal from '../components/ShareModal'
 import SpeciesCorrectionSheet from '../components/SpeciesCorrectionSheet'
 import LocationPicker from '../components/LocationPicker'
 
@@ -57,6 +58,7 @@ function NewEncounterPage({ onNavigate }) {
   const [savedRecord, setSavedRecord] = useState(null)
   const [showSpeciesCorrection, setShowSpeciesCorrection] = useState(false)
   const [showLocationPicker, setShowLocationPicker] = useState(false)
+  const [shareDraftRecord, setShareDraftRecord] = useState(null)
   const hasManualLocationInputRef = useRef(false)
   const locationRef = useRef(location)
 
@@ -246,6 +248,20 @@ function NewEncounterPage({ onNavigate }) {
     ? '重新生成'
     : '✨ AI 帮我生成档案'
 
+  const handleOpenShare = () => {
+    if (!selectedImage) return
+
+    setShareDraftRecord({
+      id: 'draft-share',
+      imageBase64: selectedImage,
+      title,
+      species,
+      location: location || '城市某处',
+      journal,
+      createdAt: (recognizedAt || new Date()).toISOString(),
+    })
+  }
+
   return (
     <div className="min-h-screen bg-[#fffdf7]">
       {/* Header */}
@@ -349,7 +365,8 @@ function NewEncounterPage({ onNavigate }) {
             保存到日志
           </button>
           <button
-            onClick={() => alert('即将上线，敬请期待！')}
+            onClick={handleOpenShare}
+            disabled={!selectedImage}
             className="flex-1 btn btn-md btn-default"
           >
             分享发现
@@ -393,6 +410,12 @@ function NewEncounterPage({ onNavigate }) {
           onClose={() => setShowLocationPicker(false)}
         />
       )}
+
+      <ShareModal
+        record={shareDraftRecord}
+        isOpen={Boolean(shareDraftRecord)}
+        onClose={() => setShareDraftRecord(null)}
+      />
     </div>
   )
 }

@@ -81,7 +81,7 @@ function SpeciesCorrectionSheet({
       onClick={handleClose}
     >
       <div
-        className="w-full rounded-t-[28px] bg-[#fffdf7] px-5 pt-5"
+        className="w-full max-h-[80vh] overflow-hidden rounded-t-[28px] bg-[#fffdf7] px-5 pt-5"
         style={{
           boxShadow: '0 -12px 32px rgba(61, 52, 40, 0.18)',
           animation: 'zoom-in 0.3s ease',
@@ -105,7 +105,15 @@ function SpeciesCorrectionSheet({
           </button>
         </div>
 
-        <div className="space-y-4">
+        <div
+          className="space-y-4 overflow-y-auto pb-2"
+          style={{
+            maxHeight: 'calc(80vh - 120px)',
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain',
+            touchAction: 'pan-y',
+          }}
+        >
           {sections.map((section) => (
             <div key={section.category} className="rounded-[22px] bg-[#f7f0e4] px-4 py-4">
               <div className="mb-3 flex items-center justify-between gap-2">
