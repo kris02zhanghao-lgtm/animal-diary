@@ -518,7 +518,7 @@ function ListPage({ initialExpandedId = null, isActive = false }) {
                 <div className="flex items-center gap-2">
                   <span>🐾</span>
                   {isEditing ? (
-                    <div className="flex flex-1 items-center gap-2">
+                    <div className="flex flex-1 items-center gap-2 min-w-0">
                       <input
                         type="text"
                         value={editingSpecies}
@@ -527,14 +527,14 @@ function ListPage({ initialExpandedId = null, isActive = false }) {
                           setEditingCategory('')
                           setEditingSpeciesTag('')
                         }}
-                        className="flex-1 font-bold px-3 py-1.5 rounded-lg focus:outline-none"
+                        className="flex-1 min-w-0 font-bold px-3 py-1.5 rounded-lg focus:outline-none"
                         style={{ background: '#f0e8d8', border: '1px solid #c9a97a', color: '#3d2b1a' }}
                         placeholder="动物种类"
                       />
                       <button
                         type="button"
                         onClick={() => setShowSpeciesCorrection(true)}
-                        className="rounded-full px-2.5 py-1 text-xs font-medium"
+                        className="shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium"
                         style={{ background: '#ebe1cf', color: '#7a5c3a' }}
                       >
                         修正
