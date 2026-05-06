@@ -103,3 +103,6 @@ https://animal-diary-kris-kris-kris-projects.vercel.app
 ## 体验建议
   该项目当前主要面向手机端使用场景设计。电脑端访问时，建议在浏览器开发者工具中切换到手机尺寸进行体验，以获得更接近真实使
   用场景的效果。受开发时间限制，本次版本优先完成了移动端核心流程，后续会继续优化更完整的多端适配体验。
+
+<img width="86" height="98" alt="image" src="https://github.com/user-attachments/assets/c6535460-7b18-4192-bdb6-c0ffac647d60" />
+
