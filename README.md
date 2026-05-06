@@ -56,8 +56,6 @@
 
 ## 本地开发
 
-### 方式 1：直接运行（推荐开发）
-
 安装依赖：
 
 ```bash
@@ -81,41 +79,6 @@ VITE_AMAP_SECURITY_CODE=
 ```
 
 如果需要参考变量模板，可查看 `.env.example`。
-
-### 方式 2：Docker 运行（推荐生产/部署）
-
-#### 快速开始
-
-1. **安装 Docker**
-   - Windows/Mac：下载 [Docker Desktop](https://www.docker.com/products/docker-desktop)
-   - Linux：`sudo apt-get install docker.io docker-compose`
-
-2. **配置环境变量**
-   ```bash
-   cp .env.docker .env
-   # 编辑 .env，填入你的 API 密钥
-   nano .env
-   ```
-
-3. **启动应用**
-   ```bash
-   docker-compose up --build
-   ```
-
-4. **访问应用**
-   打开浏览器访问 http://localhost:3000
-
-#### 所需的 API 密钥
-
-- **Supabase**（数据库，必需）：https://supabase.com
-- **OpenRouter**（AI 识别，必需）：https://openrouter.ai
-- **高德地图**（地图功能，可选）：https://lbs.amap.com
-
-#### 详细部署文档
-
-- 完整 Docker 部署指南：[DOCKER_DEPLOYMENT.md](./DOCKER_DEPLOYMENT.md)
-- 本地验收步骤：[LOCAL_VERIFICATION_GUIDE.md](./LOCAL_VERIFICATION_GUIDE.md)
-- 提交方案对比：[SUBMISSION_OPTIONS.md](./SUBMISSION_OPTIONS.md)
 
 ## 项目状态
 
