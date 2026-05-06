@@ -106,11 +106,17 @@ https://animal-diary-kris-kris-kris-projects.vercel.app
 
 ## 界面预览
 <img width="396" height="857" alt="image" src="https://github.com/user-attachments/assets/390a8d40-78f6-4211-8ad1-49bed2804c7d" />
+
 <img width="396" height="857" alt="image" src="https://github.com/user-attachments/assets/f61ed043-0ef5-4f90-89ac-04008cfd224f" />
+
 <img width="396" height="857" alt="image" src="https://github.com/user-attachments/assets/551f402b-e82e-4a34-bcb6-03d1b658e3a4" />
+
 <img width="396" height="857" alt="image" src="https://github.com/user-attachments/assets/689ae8dd-e4d3-4d7a-ac51-a92ee0c30ada" />
+
 <img width="396" height="857" alt="image" src="https://github.com/user-attachments/assets/c118a1e7-91ec-4b03-89a4-83d3eb095a3a" />
+
 <img width="396" height="857" alt="image" src="https://github.com/user-attachments/assets/aaf660d9-7415-460b-bb98-fed75ea4ec2c" />
+
 <img width="349" height="804" alt="image" src="https://github.com/user-attachments/assets/f956e4e1-149f-4cad-bb7f-32aeaa9d0254" />
 
 
