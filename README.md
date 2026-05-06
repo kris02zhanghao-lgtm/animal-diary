@@ -104,5 +104,14 @@ https://animal-diary-kris-kris-kris-projects.vercel.app
   该项目当前主要面向手机端使用场景设计。电脑端访问时，建议在浏览器开发者工具中切换到手机尺寸进行体验，以获得更接近真实使
   用场景的效果。受开发时间限制，本次版本优先完成了移动端核心流程，后续会继续优化更完整的多端适配体验。
 
-<img width="86" height="98" alt="image" src="https://github.com/user-attachments/assets/c6535460-7b18-4192-bdb6-c0ffac647d60" />
+## 界面预览
+<img width="396" height="857" alt="image" src="https://github.com/user-attachments/assets/390a8d40-78f6-4211-8ad1-49bed2804c7d" />
+<img width="396" height="857" alt="image" src="https://github.com/user-attachments/assets/f61ed043-0ef5-4f90-89ac-04008cfd224f" />
+<img width="396" height="857" alt="image" src="https://github.com/user-attachments/assets/551f402b-e82e-4a34-bcb6-03d1b658e3a4" />
+<img width="396" height="857" alt="image" src="https://github.com/user-attachments/assets/689ae8dd-e4d3-4d7a-ac51-a92ee0c30ada" />
+<img width="396" height="857" alt="image" src="https://github.com/user-attachments/assets/c118a1e7-91ec-4b03-89a4-83d3eb095a3a" />
+<img width="396" height="857" alt="image" src="https://github.com/user-attachments/assets/aaf660d9-7415-460b-bb98-fed75ea4ec2c" />
+<img width="349" height="804" alt="image" src="https://github.com/user-attachments/assets/f956e4e1-149f-4cad-bb7f-32aeaa9d0254" />
+
+
 
