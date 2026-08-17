@@ -17,14 +17,14 @@
 
 ## 最近完成
 
-✅ **v1.0「会话初始化可靠性修复」已完成开发（2026-08-17）**
+✅ **v1.0「会话初始化可靠性修复」已完成上线（2026-08-17）**
 - ✅ 问题定位：线上首屏依赖 Supabase 匿名会话初始化；当 Supabase/Auth 网络请求异常或长时间无响应时，原 `ensureSession()` 没有超时保护，导致首次失败后刷新可能一直停留在“加载中”
 - ✅ 会话服务加固：`src/services/authService.js` 增加 8 秒超时、有限重试、并发请求合并，避免 React StrictMode 或重复初始化触发多次匿名登录
 - ✅ 用户恢复入口：`src/App.jsx` 的会话失败页新增明确错误文案和“重新连接”按钮，失败后不再要求用户只能 F5 刷新
 - ✅ 匿名身份保护：修复不清理 localStorage、不 signOut、不主动替换已有匿名身份，避免误伤用户历史记录访问权限
 - ✅ 测试覆盖：新增 `src/utils/promiseUtils.js` 与 `tests/promiseUtils.test.js`，覆盖超时、重试、停止重试等基础行为
 - ✅ 代码质量：`node --test tests/promiseUtils.test.js`、`npm run lint`、`npm run build` 通过；`npm test` 仍被既有 `achievementRules.test.js` 用例失败阻塞，和本次会话修复无关
-- ⏳ 待上线验证：已完成本地修复，等待 commit/push 后由 Vercel 部署到 Production 再验证线上首屏表现
+- ✅ 生产部署：已推送 `585d26a` 到 `origin/master`，Vercel Production 已返回最新首页与会话 bundle，线上资源确认包含超时文案和“重新连接”按钮
 
 ✅ **v1.0「时间线加载体验优化」已完成上线（2026-05-05）**
 - ✅ 首次进入时间线页加载态优化：`src/pages/ListPage.jsx` 新增 `TimelineSkeleton`、`isLoadingRecords`、`hasLoadedRecordsOnce`，首次请求记录时先展示骨架屏，不再误闪“还没有偶遇记录”
