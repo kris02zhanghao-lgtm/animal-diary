@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
-import { ensureSession } from './services/authService'
+import { ensureSession, getSessionErrorMessage } from './services/authService'
 import ListPage from './pages/ListPage'
 import BottomTabBar from './components/BottomTabBar'
 
@@ -26,16 +26,33 @@ function App() {
   const [activePage, setActivePage] = useState('timeline')
   const [authReady, setAuthReady] = useState(false)
   const [authError, setAuthError] = useState(null)
+  const [authAttempt, setAuthAttempt] = useState(0)
   const [expandTargetId, setExpandTargetId] = useState(null)
 
   const sharedToken = getSharedToken()
 
   useEffect(() => {
     if (sharedToken) return
+
+    let ignore = false
     ensureSession()
-      .then(() => setAuthReady(true))
-      .catch(() => setAuthError('无法建立会话，请刷新重试'))
-  }, [sharedToken])
+      .then(() => {
+        if (!ignore) setAuthReady(true)
+      })
+      .catch((error) => {
+        if (!ignore) setAuthError(getSessionErrorMessage(error))
+      })
+
+    return () => {
+      ignore = true
+    }
+  }, [sharedToken, authAttempt])
+
+  const retrySession = () => {
+    setAuthReady(false)
+    setAuthError(null)
+    setAuthAttempt(current => current + 1)
+  }
 
   if (sharedToken) {
     return (
@@ -47,8 +64,15 @@ function App() {
 
   if (authError) {
     return (
-      <div className="min-h-screen bg-[#fffdf7] flex items-center justify-center">
+      <div className="min-h-screen bg-[#fffdf7] flex flex-col items-center justify-center gap-4 px-6">
         <p className="text-red-500 text-sm">{authError}</p>
+        <button
+          type="button"
+          onClick={retrySession}
+          className="px-5 py-2.5 rounded-xl bg-[#6b8e4e] text-white text-sm font-semibold shadow-sm active:scale-95 transition-transform"
+        >
+          重新连接
+        </button>
       </div>
     )
   }
